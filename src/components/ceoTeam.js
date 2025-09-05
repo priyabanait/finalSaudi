@@ -64,7 +64,7 @@ export default function CeoTeam() {
 
 
     {/* Right Content - Changed to items-start */}
-    <div className="w-full md:w-full flex flex-col justify-end items-end text-end mt-10  px-2 md:px-10">
+    <div className="w-full md:w-full flex flex-col justify-center items-center text-center mt-10  px-2 md:px-10">
       <h1 className="text-xl md:text-2xl font-semibold tracking-wide text-[rgb(206,32,39,255)]">
         MEET OUR CEO
       </h1>

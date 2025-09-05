@@ -10,6 +10,8 @@ const Technology = () => {
   const timelineRef2 = useRef(null);
   const [markerTop1, setMarkerTop1] = useState(0);
   const [markerTop2, setMarkerTop2] = useState(0);
+  const [heroSrc, setHeroSrc] = useState('/'); 
+  const [page, setPage] = useState('');
 
   const steps = [
     {
@@ -137,14 +139,31 @@ const Technology = () => {
     handleScroll2();
     return () => window.removeEventListener('scroll', handleScroll2);
   }, []);
-
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/kw-technology');
+        if (!res.ok) return;
+        console.log(res);
+        
+        const page = await res.json();
+        setPage(page)
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
   return (
     <div className="relative">
       <Header />
 
       <Box
-        src="/kw_technology_page.jpeg"
-        h3="KW Technology"
+        src={heroSrc}
+        h3={page.backgroundOverlayContent}
         image="https://static.wixstatic.com/media/36a881_a82aacde83a9442dae07d99a846cadf4~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8-removebg-preview%20(1).png"
       />
 

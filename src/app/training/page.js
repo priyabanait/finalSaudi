@@ -1,18 +1,35 @@
 'use client'
 import React from 'react';
-
+import {useState,useEffect} from 'react';
 import Header from '@/components/header';
 import Box from '@/components/box';
 import Footer from '@/components/newfooter';
 import Image from 'next/image';
 import Link from 'next/link';
+
 export default function Training() {
+  const [heroSrc, setHeroSrc] = useState('/');
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/kw-training');
+        if (!res.ok) return;
+        const page = await res.json();
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
   return (
     <div>
       <Header />
       <Box
         h3={"KW Training"}
-        src="/why_kw_page.jpeg"
+        src={heroSrc}
         image={
           '/ourculture2.jpg'
         }

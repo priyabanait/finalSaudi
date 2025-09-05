@@ -57,15 +57,20 @@ const PropertiesContent = () => {
       setLoading(true);
       setError(null);
       try {
+        const requestBody = {
+          limit: 1000,
+          page: 1,
+        };
+        
+        // Add property_type parameter if commercial is selected
+        if (selected.commercial) {
+          requestBody.property_type = 'Commercial';
+        }
+        
         const res = await fetch('https://kw-backend-q6ej.vercel.app/api/listings/list/properties', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            limit: 1000,
-           
-            page: 1,
-          
-          })
+          body: JSON.stringify(requestBody)
         });
         
 
@@ -151,9 +156,20 @@ const PropertiesContent = () => {
 
   const filteredProperties = properties.filter(property => {
     // Filter by price
-    const propPrice = property.price || property.current_list_price || 0;
-    if (minPrice && propPrice < minPrice) return false;
-    if (maxPrice && propPrice > maxPrice) return false;
+    const propPrice = Number(property.price || property.current_list_price || 0);
+    const minPriceNum = minPrice ? Number(minPrice) : 0;
+    const maxPriceNum = maxPrice ? Number(maxPrice) : Infinity;
+    
+    if (minPriceNum > 0 && propPrice < minPriceNum) return false;
+    if (maxPriceNum > 0 && propPrice > maxPriceNum) return false;
+    
+    // Filter by commercial checkbox - if commercial is selected, only show commercial properties
+    if (selected.commercial) {
+      const propType = String(property.prop_type || property.type || '').toLowerCase().trim();
+      if (propType !== 'commercial') {
+        return false;
+      }
+    }
     
     // Filter by property type - only if a type is selected
     if (propertyType && propertyType !== 'PROPERTY TYPE') {
@@ -235,7 +251,27 @@ const PropertiesContent = () => {
   }, [propertyType, marketCenter, propertySubType, city, minPrice, maxPrice, properties, filteredProperties]);
 
 
-
+  const [heroSrc, setHeroSrc] = useState('/')
+  const[page,setPage]=useState('');
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/recently-rented');
+        if (!res.ok) return;
+       
+        
+        const page = await res.json();
+        console.log(page);
+        setPage(page)
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
  
   return (
     <div className="relative p-6 md:p-8 ">
@@ -253,7 +289,7 @@ const PropertiesContent = () => {
     <section className={`relative w-full ${showFilters ? 'h-[120vh] md:h-[125vh]' : 'h-screen md:h-screen'} text-white overflow-hidden transition-all duration-500 ease-in-out`}>
       {/* Background Image with previous blurring out and next coming in */}
       <Image
-              src='/1.jpg'
+              src={heroSrc}
               alt="Previous Hero Background"
               layout="fill"
               
@@ -589,49 +625,86 @@ const PropertiesContent = () => {
       {/* Search button */}
       <div className="text-center">
         <button
-          className="bg-[rgb(206,32,39,255)] text-white px-8 py-2 text-xl font-semibold hover:bg-red-700"
-          onClick={async () => {
-            setLoading(true);
-            setError(null);
-            try {
-              const body = {
-                limit: 2000,
-              
-              };
-              if (city && city !== 'CITY') body.location = city;
-              if (selected?.sale) body.forsale = true;
-              if (selected?.rent) body.forrent = true;
-              if (selected?.commercial) body.property_type = 'Commercial';
-              if (propertyType && propertyType !== 'PROPERTY TYPE') body.property_category = propertyType;
-              if (propertySubType && propertySubType !== '' && propertySubType !== 'No Preference') body.property_subtype = propertySubType;
-              if (minPrice && minPrice !== '' && minPrice !== 'No Preference') body.min_price = minPrice;
-              if (maxPrice && maxPrice !== '' && maxPrice !== 'No Preference') body.max_price = maxPrice;
-              if (includeNewHomes !== undefined) body.include_new_homes = includeNewHomes;
-              
-              console.log('Selected filters:', selected);
-              console.log('Sending to backend:', body);
-
-              const res = await fetch('https://kwbackend.jc2g.in/api/listings/list/properties', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-              });
-              const data = await res.json();
-              const fetched = Array.isArray(data?.data) ? data.data : [];
-              setProperties(fetched);
-              console.log('Search filters applied:', body);
-              console.log('Filtered results:', fetched.length);
-            } catch (err) {
-              console.error('Error fetching filtered properties:', err);
-              setError('Failed to load properties');
-            } finally {
-              setLoading(false);
+          className="bg-[rgb(206,32,39,255)] text-white px-8 py-2 text-xl font-semibold hover:bg-red-700 transition-colors duration-200"
+          onClick={(event) => {
+            // Apply filters locally without making API call
+            console.log('Applying filters locally:', {
+              selected,
+              propertyType,
+              propertySubType,
+              city,
+              minPrice,
+              maxPrice,
+              includeNewHomes
+            });
+            
+            // The filtering is already applied through the filteredProperties variable
+            // Show success message and scroll to results
+            console.log('Filters applied successfully!');
+            console.log('Filtered results:', filteredProperties.length);
+            
+            // Show a brief success message
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Filters Applied!';
+            button.className = 'bg-green-600 text-white px-8 py-2 text-xl font-semibold transition-colors duration-200';
+            
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.className = 'bg-[rgb(206,32,39,255)] text-white px-8 py-2 text-xl font-semibold hover:bg-red-700 transition-colors duration-200';
+            }, 2000);
+            
+            // Scroll to results section
+            const resultsSection = document.querySelector('.min-h-screen');
+            if (resultsSection) {
+              resultsSection.scrollIntoView({ behavior: 'smooth' });
             }
           }}
         >
           Search
         </button>
       
+  </div>
+  
+  {/* Active Filters Summary */}
+  <div className="mt-4 text-center">
+    <div className="inline-flex flex-wrap gap-2 justify-center">
+      {selected.commercial && (
+        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+          Commercial Properties
+        </span>
+      )}
+      {propertyType && propertyType !== 'PROPERTY TYPE' && (
+        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+          Type: {propertyType}
+        </span>
+      )}
+      {propertySubType && propertySubType !== '' && propertySubType !== 'No Preference' && (
+        <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+          Subtype: {propertySubType}
+        </span>
+      )}
+      {city && city !== 'CITY' && (
+        <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+          Location: {city}
+        </span>
+      )}
+      {minPrice && minPrice !== '' && minPrice !== 'No Preference' && (
+        <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+          Min: ﷼ {formatPrice(minPrice)}
+        </span>
+      )}
+      {maxPrice && maxPrice !== '' && maxPrice !== 'No Preference' && (
+        <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+          Max: ﷼ {formatPrice(maxPrice)}
+        </span>
+      )}
+      {filteredProperties.length > 0 && (
+        <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+          {filteredProperties.length} Results
+        </span>
+      )}
+    </div>
   </div>
 </div>
   
@@ -812,7 +885,7 @@ const PropertiesContent = () => {
             className="md:w-80 w-50 md:py-2 py-2 my-10 md:my-10 px-4 bg-gray-500 text-white text-base md:text-lg font-semibold transition whitespace-nowrap"
             onClick={() => setVisibleCount((c) => c + 6)}
           >
-            View More Properties..
+            View More Properties
           </button>
         </div>
       )}

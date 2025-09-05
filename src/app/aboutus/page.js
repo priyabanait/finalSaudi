@@ -1,5 +1,5 @@
 'use client'
-import React, { useRef, useEffect } from 'react';
+import React, { useRef,useState, useEffect } from 'react';
 import Header from '@/components/header';
 import Box from '@/components/box';
 import Footer from '@/components/newfooter';
@@ -8,6 +8,8 @@ import Image from 'next/image';
 import CeoTeam from '@/components/ceoTeam';
 import Howwill from '@/components/Howwill';
 export default function Aboutus() {
+  const [heroSrc, setHeroSrc] = useState('/'); 
+  const [page, setPage] = useState('');
   const videoRef = useRef(null);
 
   // useEffect(() => {
@@ -31,15 +33,32 @@ export default function Aboutus() {
   //     if (observer && video) observer.unobserve(video);
   //   };
   // }, []);
-
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/about-us');
+        if (!res.ok) return;
+        console.log(res);
+        
+        const page = await res.json();
+        setPage(page)
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
   return (
     <div>
       <Header />
 
       <Box
       
-        src="/About_us_banner.jpg"
-        h3='About Us KW Saudi Arabia'
+        src={heroSrc}
+        h3={page.backgroundOverlayContent}
         image="https://static.wixstatic.com/media/36a881_a82aacde83a9442dae07d99a846cadf4~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8-removebg-preview%20(1).png"
       />
 
@@ -73,7 +92,7 @@ export default function Aboutus() {
             </div>
           </div>
 
-          {/* Image Section */}
+          {/* Video Section */}
           <div className="md:w-1/3  md:mt-20">
             <Image 
               src="/kw about video pic.jpg"

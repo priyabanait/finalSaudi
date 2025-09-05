@@ -1,6 +1,6 @@
 'use client'
 import React, { useState, useEffect, useRef } from "react";
-import { 
+import {
   FaSearch, FaBars, FaTimes, FaBuilding,
   FaNetworkWired, FaUserTie, FaKey, FaUser,
   FaUsers, FaGlobe, FaHome, FaEnvelope, FaPhone,
@@ -9,10 +9,13 @@ import {
 } from "react-icons/fa";
 import Link from 'next/link';
 import Image from 'next/image';
+import { useTranslation } from '../contexts/TranslationContext';
+import GoogleTranslate, { setGoogleTranslateLanguage } from './GoogleTranslate';
 
 const Header = () => {
-  const [isVisible, setIsVisible] = useState(true);  
-  const [isAtTop, setIsAtTop] = useState(true);  
+  const { language, isRTL, toggleLanguage, switchToLanguage, translatePage, t, isTranslating } = useTranslation();
+  const [isVisible, setIsVisible] = useState(true);
+  const [isAtTop, setIsAtTop] = useState(true);
   const prevScrollY = useRef(0);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [openSubmenu, setOpenSubmenu] = useState(null);
@@ -28,6 +31,28 @@ const Header = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  // Handle language switching safely
+  const handleLanguageSwitch = async (newLanguage) => {
+    try {
+      // Close mobile menu if open
+      if (isMenuOpen) {
+        setIsMenuOpen(false);
+        setOpenSubmenu(null);
+      }
+
+      // Trigger Google Translate widget (wait until ready)
+      const ok = await setGoogleTranslateLanguage(newLanguage);
+      // Update dir/lang immediately via context (no in-app translation)
+      await switchToLanguage(newLanguage, { skipTranslate: true });
+      // If widget is not ready, fallback to our in-app translation for Arabic
+      if (!ok && newLanguage === 'ar') {
+        await switchToLanguage(newLanguage);
+      }
+    } catch (error) {
+      console.error('Error switching language:', error);
+    }
   };
 
   useEffect(() => {
@@ -80,43 +105,57 @@ const Header = () => {
   }, [isMenuOpen]);
 
   const menuItems = [
-    { label: 'Sell', key: 'sell',  submenu: [
-      { label: 'Instant Valuation', href: '/instantvaluation' },
-      { label: 'Seller Guide', href: '/seller/sellerguid' },
-      { label: 'Book/Search KW Agent', href: '/agent' },
-      { label: 'Five Steps To Sell', href: '/seller' },
-    ]},
-    { label: 'Buy', key: 'buy', submenu: [
-      { label: 'Property Search', href: '/buyer' },
-      { label: 'New Development', href: '/properties/newdevelopment' },
-      { label: 'Buyer Guide', href: '/buyer/buyerguid' }
-    ] },
-    { label: 'Rent', key: 'search', submenu: [
-      { label: 'Rental Search', href: '/properties/rent' },
-      { label: 'Recently Rented', href: '/properties/recentlyrented' },
-    ]},
-    { label: 'About', key: 'about', submenu: [
-      { label: 'About Us', href:"/aboutus" },
-      { label: 'Why KW', href: "/ourCulture/whyKW" },
-      { label: "KW Training", href: "/training" },
-      { label: "KW Technology", href: "/ourCulture/technology" },
-      { label: "KW University", href: "https://console.command.kw.com/connect/learning" },
-    ] },
-    { label: 'Search Agent/Market Center', key: 'searchagent',  submenu: [
-      { label: 'KW Agent', href: '/agent' },
-      { label: "Jasmine MC", href: "/jasmin" },
-      { label: "Jeddah MC", href: "/jeddah" },
-    ]},
-    { label: 'Join Us', key: 'join',  submenu: [
-      { label: 'Become an Agent', href: '/joinus' },
-      { label: 'Franchise',href: '/franchise'   }
-    ]},
+    {
+      label: t('Sell'), key: 'sell', submenu: [
+        { label: t('Instant Valuation'), href: '/instantvaluation' },
+        { label: t('Seller Guide'), href: '/seller/sellerguid' },
+        { label: t('Book/Search KW Agent'), href: '/agent' },
+        { label: t('Five Steps To Sell'), href: '/seller' },
+      ]
+    },
+    {
+      label: t('Buy'), key: 'buy', submenu: [
+        { label: t('Property Search'), href: '/buyer' },
+        { label: t('New Development'), href: '/properties/newdevelopment' },
+        { label: t('Buyer Guide'), href: '/buyer/buyerguid' }
+      ]
+    },
+    {
+      label: t('Rent'), key: 'search', submenu: [
+        { label: t('Rental Search'), href: '/properties/rent' },
+        { label: t('Recently Rented'), href: '/properties/recentlyrented' },
+      ]
+    },
+    {
+      label: t('About'), key: 'about', submenu: [
+        { label: t('About Us'), href: "/aboutus" },
+        { label: t('Why KW'), href: "/ourCulture/whyKW" },
+        { label: t("KW Training"), href: "/training" },
+        { label: t("KW Technology"), href: "/ourCulture/technology" },
+        { label: t("KW University"), href: "https://console.command.kw.com/connect/learning" },
+      ]
+    },
+    {
+      label: t('Search Agent/Market Center'), key: 'searchagent', submenu: [
+        { label: t('KW Agent'), href: '/agent' },
+        { label: t("Jasmine MC"), href: "/jasmin" },
+        { label: t("Jeddah MC"), href: "/jeddah" },
+      ]
+    },
+    {
+      label: t('Join Us'), key: 'join', submenu: [
+        { label: t('Become an Agent'), href: '/joinus' },
+        { label: t('Franchise'), href: '/franchise' }
+      ]
+    },
   ];
 
   const toTitleCase = (str) => str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
 
   return (
     <div className="fixed top-0 left-0 right-0 z-50 pointer-events-none">
+      {/* Hidden Google Translate widget container */}
+      <GoogleTranslate />
       <header
         className={`
           pointer-events-auto
@@ -156,7 +195,7 @@ const Header = () => {
         </div>
 
         {/* Desktop Menu */}
-        <nav className="hidden md:flex items-center ">
+        <nav className="hidden md:flex items-center header-nav">
           {menuItems.map(item => (
             <div key={item.key} className="relative group">
               {item.submenu ? (
@@ -170,7 +209,7 @@ const Header = () => {
                     `}
                   >
                     {item.label}
-                    <FaChevronDown  className="ml-1" />
+                    <FaChevronDown className="ml-1" />
                   </button>
                   <div className="absolute left-0 top-full min-w-[180px] bg-gray-950/95 border-t-4 border-transparent group-hover:border-red-700
                     shadow-lg z-40 opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none transition-all duration-200 mt-0 py-2 px-2 space-y-1">
@@ -207,17 +246,30 @@ const Header = () => {
             <div className="relative group">
               <button
                 type="button"
-                className="flex items-center font-semibold px-4 h-[63.5px] text-white bg-gray-700 text-[0.9rem] border border-gray-700 hover:bg-gray-300"
+                disabled={isTranslating}
+                className="flex items-center font-semibold px-4 h-[63.5px] text-white bg-gray-700 text-[0.9rem] border border-gray-700 hover:bg-gray-300 disabled:opacity-50"
               >
-                عربي
-                <FaChevronDown  className="ml-1" />
+                {isTranslating ? 'Translating...' : (language === 'ar' ? 'عربي' : 'English')}
+                <FaChevronDown className={`ml-1 ${isRTL ? 'rtl-ml-1' : ''}`} />
               </button>
               <div className="absolute left-0 top-full min-w-[120px] bg-gray-950/95 shadow-lg z-40
                 opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none
                 transition-all duration-200 py-2 px-2 space-y-1 border-t-4 border-transparent group-hover:border-red-700 font-semibold">
-                <Link href="#" className="block px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)]">English</Link>
+                <button
+                  onClick={() => handleLanguageSwitch('en')}
+                  disabled={isTranslating || language === 'en'}
+                  className="block w-full text-left px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)] transition-colors disabled:opacity-50"
+                >
+                  English
+                </button>
                 <div className="h-px bg-gray-700 my-1 w-full" />
-                <Link href="#" className="block px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)]">عربي</Link>
+                <button
+                  onClick={() => handleLanguageSwitch('ar')}
+                  disabled={isTranslating || language === 'ar'}
+                  className="block w-full text-left px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)] transition-colors disabled:opacity-50"
+                >
+                  عربي
+                </button>
               </div>
             </div>
 
@@ -227,24 +279,24 @@ const Header = () => {
                 type="button"
                 className="flex items-center font-semibold px-4 h-[63.5px] text-white bg-red-700 text-[0.9rem] border border-red-700 border-l-0"
               >
-                Contact
-                <FaChevronDown  className="ml-1" />
+                {t('Contact')}
+                <FaChevronDown className={`ml-1 ${isRTL ? 'rtl-ml-1' : ''}`} />
               </button>
               <div className="absolute left-0 top-full min-w-[160px] bg-gray-950/95 shadow-lg z-40
                 opacity-0 group-hover:opacity-100 group-hover:pointer-events-auto pointer-events-none
                 transition-all duration-200 py-2 px-2 space-y-1 border-t-4 border-transparent group-hover:border-red-700 font-semibold">
-                <Link href="/agent" className="block px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)]">KW Agent</Link>
+                <Link href="/agent" className="block px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)]">{t('KW Agent')}</Link>
                 <div className="h-px bg-gray-700 my-1 w-full" />
-                <Link href="/contactUs" className="block px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)]">Contact Us</Link>
+                <Link href="/contactUs" className="block px-3 py-1 text-white text-[0.9rem] hover:text-[rgb(206,32,39,255)]">{t('Contact Us')}</Link>
               </div>
             </div>
           </div>
         </nav>
 
         {/* Mobile Menu Toggle */}
-        <button 
+        <button
           ref={buttonRef}
-          className="md:hidden text-white focus:outline-none p-2" 
+          className="md:hidden text-white focus:outline-none p-2"
           onClick={toggleMenu}
           aria-label={isMenuOpen ? "Close menu" : "Open menu"}
         >
@@ -253,7 +305,7 @@ const Header = () => {
 
         {/* Mobile Menu */}
         {isMenuOpen && (
-          <div 
+          <div
             ref={menuRef}
             className="absolute md:hidden top-full left-0 right-0 py-4 ml-24 mr-2 px-4 space-y-4 shadow-lg bg-black backdrop-blur-sm z-50 border-t-4 border-[rgb(206,32,39,255)]"
           >
@@ -268,9 +320,9 @@ const Header = () => {
                       {toTitleCase(item.label)}
                     </span>
                     {openSubmenu === item.key ? (
-                      <FaChevronUp  className="text-white" />
+                      <FaChevronUp className="text-white" />
                     ) : (
-                      <FaChevronDown  className="text-white" />
+                      <FaChevronDown className="text-white" />
                     )}
                   </div>
                 ) : (
@@ -297,17 +349,31 @@ const Header = () => {
 
             {/* Mobile Language Dropdown */}
             <div
-              onClick={() => toggleSubmenu('عربي')}
+              onClick={() => toggleSubmenu('language')}
               className="flex justify-between items-center px-2 text-white hover:text-gray-300 transition-colors cursor-pointer py-1 border-b border-gray-700"
             >
-              <span className={openSubmenu === 'عربي' ? ' font-semibold underline' : 'text-white'}>عربي</span>
-              {openSubmenu === 'عربي' ? <FaChevronUp  className="text-white" /> : <FaChevronDown  className="text-white" />}
+              <span className={openSubmenu === 'language' ? ' font-semibold underline' : 'text-white'}>
+                {isTranslating ? 'Translating...' : (language === 'ar' ? 'عربي' : 'English')}
+              </span>
+              {openSubmenu === 'language' ? <FaChevronUp className="text-white" /> : <FaChevronDown className="text-white" />}
             </div>
-            {openSubmenu === 'عربي' && (
+            {openSubmenu === 'language' && (
               <div className=" text-base text-white bg-gray-700 px-3 py-2">
-                <Link href="#" className="block">English</Link>
+                <button
+                  onClick={() => handleLanguageSwitch('en')}
+                  disabled={isTranslating || language === 'en'}
+                  className="block w-full text-left disabled:opacity-50"
+                >
+                  English
+                </button>
                 <div className="h-px bg-gray-400 my-1 w-full" />
-                <Link href="#" className="block">عربي</Link>
+                <button
+                  onClick={() => handleLanguageSwitch('ar')}
+                  disabled={isTranslating || language === 'ar'}
+                  className="block w-full text-left disabled:opacity-50"
+                >
+                  عربي
+                </button>
               </div>
             )}
 
@@ -316,14 +382,14 @@ const Header = () => {
               onClick={() => toggleSubmenu('contact')}
               className="flex justify-between items-center  text-white bg-[rgb(206,32,39,255)] px-2 py-2 cursor-pointer border border-[rgb(206,32,39,255)]"
             >
-              <span className={openSubmenu === 'contact' ? ' font-semibold' : 'text-white'}>Contact</span>
-              {openSubmenu === 'contact' ? <FaChevronUp  className="text-white" /> : <FaChevronDown  className="text-white" />}
+              <span className={openSubmenu === 'contact' ? ' font-semibold' : 'text-white'}>{t('Contact')}</span>
+              {openSubmenu === 'contact' ? <FaChevronUp className="text-white" /> : <FaChevronDown className="text-white" />}
             </div>
             {openSubmenu === 'contact' && (
               <div className="mt-1 text-base text-white bg-gray-700 px-3 py-2">
-                <Link href="/agent" className="block">KW Agent</Link>
+                <Link href="/agent" className="block">{t('KW Agent')}</Link>
                 <div className="h-px bg-gray-400 my-1 w-full" />
-                <Link href="/contactUs" className="block">Contact Us</Link>
+                <Link href="/contactUs" className="block">{t('Contact Us')}</Link>
               </div>
             )}
           </div>

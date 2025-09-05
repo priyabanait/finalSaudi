@@ -4,27 +4,52 @@ import Image from 'next/image';
 import Header from '@/components/header';
 import NewFooter from "@/components/newfooter"
 import Box from '@/components/box';
-import axios from 'axios';
+import api from '@/utils/api';
 import { FaPlus } from "react-icons/fa";
 
 const InstantValuation = () => {
   const [propertyType, setpropertyType] = useState([]);
   const [loading, setLoadingProperties] = useState(true);
+  const [formData, setFormData] = useState({
+    city: '',
+    address: '',
+    fullname: '',
+    mobileNumber: '',
+    bedrooms: '',
+    property_type: '',
+    valuation_type: '',
+    promotionalConsent: false,
+    personalDataConsent: false
+  });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
 
  // derive unique list once from API response
 useEffect(() => {
   const fetchProperties = async () => {
     setLoadingProperties(true);
     try {
-      const response = await axios.post(
-        'https://kwbackend.jc2g.in/api/listings/list/properties',
-        {}
-      );
-
+      const res = await fetch('https://kwbackend.jc2g.in/api/listings/list/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          page: 1,
+          limit: 1000,
+         
+       
+        
+        })
+      });
+      const data = await res.json();
+      let fetched = [];
+      if (Array.isArray(data?.data)) {
+        fetched = data.data;
+      }
+      console.log('Fetched properties:', fetched.slice(0, 2));
       // normalize values and remove duplicates
       const uniqueTypes = [
         ...new Set(
-          (response.data.data || []).map(
+          (fetched || []).map(
             (p) => p?.prop_type || p?.property_type || "Property"
           )
         ),
@@ -40,6 +65,52 @@ useEffect(() => {
   fetchProperties();
 }, []);
 
+  // Handle form input changes
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      const payload = {
+        ...formData,
+        formType: 'instant-valuation'
+      };
+      console.log('Sending data to backend:', payload);
+      
+      const response = await api.post('/leads', payload);
+
+      if (response.status === 200 || response.status === 201) {
+        setSubmitMessage('Thank you! Your valuation request has been submitted successfully.');
+        // Reset form
+        setFormData({
+          city: '',
+          address: '',
+          fullname: '',
+          mobileNumber: '',
+          bedrooms: '',
+          property_type: '',
+          valuation_type: '',
+          promotionalConsent: false,
+          personalDataConsent: false
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitMessage('Sorry, there was an error submitting your request. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // Debug log for property types
   useEffect(() => {
@@ -85,33 +156,54 @@ useEffect(() => {
             <h3 className="text-xl font-bold text-start mb-6">
               Your Free, Online Valuation Starts Here..
             </h3>
-            <form className="space-y-4">
+            
+            {/* Submit Message */}
+            {submitMessage && (
+              <div className={`mb-4 p-3 rounded ${submitMessage.includes('error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                {submitMessage}
+              </div>
+            )}
+
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <input
                 type="text"
+                name="city"
                 placeholder="Enter your city"
+                value={formData.city}
+                onChange={handleInputChange}
+                required
                 className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-1"
               />
-              <button 
-                type="button"
-                className="flex justify-start font-semibold text-white bg-[rgb(206,32,39,255)] p-2"
-              >
-                Find Address
-              </button>
-
+              
+             
               <input
                 type="text"
+                name="fullname"
                 placeholder="Name"
+                value={formData.fullname}
+                onChange={handleInputChange}
+                required
                 className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2"
               />
               <input
                 type="text"
+                name="mobileNumber"
                 placeholder="Number"
+                value={formData.mobileNumber}
+                onChange={handleInputChange}
+                required
                 className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2"
               />
 
               {/* Bedrooms Dropdown */}
-              <select className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2 text-gray-500" defaultValue="">
-                <option value="" >Bedrooms</option>
+              <select 
+                name="bedrooms"
+                value={formData.bedrooms}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2 text-gray-500"
+              >
+                <option value="">Bedrooms</option>
                 <option value="1">1 Bedroom</option>
                 <option value="2">2</option>
                 <option value="3">3</option>
@@ -123,31 +215,43 @@ useEffect(() => {
 
               {/* Property Type Dropdown */}
               <select
-  className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2 text-gray-500"
-  defaultValue=""
->
-  <option value="" disabled>Property type</option>
-  {!loading &&
-    propertyType.map((type, idx) => (
-      <option key={idx} value={type}>
-        {type}
-      </option>
-    ))}
-</select>
-
-              {/* Type of Valuation */}
-              <select className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2 text-gray-500" defaultValue="">
-                <option value="" disabled>Type of valuation</option>
-                <option>Sales</option>
-                <option>Letting</option>
-                <option>Both</option>
+                name="property_type"
+                value={formData.property_type}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2 text-gray-500"
+              >
+                <option value="">Select Type</option>
+                {propertyType.map((type, idx) => (
+                  <option key={idx} value={type}>
+                    {type}
+                  </option>
+                ))}
               </select>
 
+              {/* Type of Valuation */}
+              <select 
+                name="valuation_type"
+                value={formData.valuation_type}
+                onChange={handleInputChange}
+                required
+                className="w-full px-4 py-2 border border-gray-400 focus:outline-none focus:ring-2 text-gray-500"
+              >
+                <option value="">Type of valuation</option>
+                <option value="Sale">Sale</option>
+                <option value="Letting">Letting</option>
+                <option value="Both">Both</option>
+              </select>
+
+              
               <button 
                 type="submit"
-                className="flex justify-start text-white px-6 font-semibold bg-[rgb(206,32,39,255)] p-2"
+                disabled={isSubmitting}
+                className={`flex justify-start text-white px-6 font-semibold p-2 ${
+                  isSubmitting ? 'bg-gray-400 cursor-not-allowed' : 'bg-[rgb(206,32,39,255)]'
+                }`}
               >
-                Submit
+                {isSubmitting ? 'Submitting...' : 'Submit'}
               </button>
             </form>
           </div>

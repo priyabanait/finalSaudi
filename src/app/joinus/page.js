@@ -1,10 +1,31 @@
 'use client'
-import React from 'react';
+import React,{useState,useEffect} from 'react';
 import Image from 'next/image';
 import Box from '@/components/box';
 import Header from '@/components/header';
 import NewFooter from '@/components/newfooter';
 const Joinus = (props) => {
+  const [heroSrc, setHeroSrc] = useState('/');
+  const [page, setPage] = useState('');
+  
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/join-us');
+        if (!res.ok) return;
+        console.log(res);
+        
+        const page = await res.json();
+        setPage(page)
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
   return (
     <div className="">
       {/* Hero Section */}
@@ -12,8 +33,8 @@ const Joinus = (props) => {
 
       <Box
        
-        src="/Homepage_want_to_agent.jpeg"
-        h3='Become a Keller Williams Agent'
+        src={heroSrc}
+        h3={page.backgroundOverlayContent}
         image={
           '/joinus.png'
         }

@@ -187,7 +187,7 @@ const AgentProfile = () => {
   <div className="flex justify-center items-stretch gap-40">
     <div className="flex-shrink-0">
       <Image
-        src={agentData?.profileImage || "/agent.jpg"}
+        src={agentData?.profileImage || "/avtar.jpg"}
         alt="Agent"
         width={170}
         height={240}

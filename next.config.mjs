@@ -5,7 +5,7 @@ const nextConfig = {
       'static.wixstatic.com',
       'storage.googleapis.com',
       'source.unsplash.com',
-      
+      'localhost',
       'static.kw.com',
       "c.pxhere.com",
       "images.unsplash.com",

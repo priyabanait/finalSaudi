@@ -6,6 +6,7 @@ import Footer from '@/components/newfooter';
 import Image from 'next/image';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
+import api from '@/utils/api';
 
 import { FaCheck } from "react-icons/fa";
 const Franchise = () => {
@@ -13,15 +14,78 @@ const Franchise = () => {
   const [isMobile, setIsMobile] = useState(false);
   const [phone, setPhone] = useState('');
   const [form, setForm] = useState({
-    name: '',
-    surname: '',
+    fullName: '',
+    mobileNumber: '',
     email: '',
-    company: '',
+    city: '',
+    educationStatus: '',
+    dob: '',
+    message: '',
+    promotionalConsent: false,
+    personalDataConsent: false
   });
-
+  const [heroSrc, setHeroSrc] = useState('/');
+  const [page, setPage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitMessage, setSubmitMessage] = useState('');
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/franchise');
+        if (!res.ok) return;
+        console.log(res);
+        
+        const page = await res.json();
+        setPage(page)
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setForm((prev) => ({ 
+      ...prev, 
+      [name]: type === 'checkbox' ? checked : value 
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setSubmitMessage('');
+
+    try {
+      const response = await api.post('/leads', {
+        ...form,
+        formType: 'franchise'
+      });
+
+      if (response.status === 200 || response.status === 201) {
+        setSubmitMessage('Thank you! Your franchise application has been submitted successfully.');
+        // Reset form
+        setForm({
+          fullName: '',
+          mobileNumber: '',
+          email: '',
+          city: '',
+          educationStatus: '',
+          dob: '',
+          message: '',
+          promotionalConsent: false,
+          personalDataConsent: false
+        });
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      setSubmitMessage('Sorry, there was an error submitting your application. Please try again.');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -32,18 +96,14 @@ const Franchise = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log('Form Data:', form);
-    console.log('Phone:', phone);
-  };
+
   return (
     <div className="relative">
       <Header />
 
       <Box
-        h3={"Investment Opportunities"}
-        src="/become_a_franchise.jpeg"
+        h3={page.backgroundOverlayContent}
+        src={heroSrc}
         image={
           'https://static.wixstatic.com/media/36a881_d93a5085a707440e9b7a3346a80846a1~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/7-removebg-preview.png'
         }
@@ -185,7 +245,7 @@ const Franchise = () => {
           <h1 className="mt-8">
             <span className="font-bold text-[rgb(206,32,39,255)] md:text-xl text-lg">SHAPE YOUR FUTURE IN REAL ESTATE</span>
             <p className='text-base md:text-lg mt-2'>
-            Ready to own a piece of the world’s largest real estate franchise? Fill out the Franchise Application 
+            Ready to own a piece of the world&apos;s largest real estate franchise? Fill out the Franchise Application 
             and take your first step toward building a business that offers both financial rewards and personal fulfillment.
             </p>
           </h1>
@@ -194,13 +254,24 @@ const Franchise = () => {
         {/* Right Section - Form */}
         <div className="bg-white text-black p-8 shadow-lg">
           <h3 className="text-2xl font-medium mb-6 flex justify-center">Franchise Application</h3>
-          <form className="space-y-4">
+          
+          {/* Submit Message */}
+          {submitMessage && (
+            <div className={`mb-4 p-3 rounded ${submitMessage.includes('error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+              {submitMessage}
+            </div>
+          )}
+
+          <form className="space-y-4" onSubmit={handleSubmit}>
           <div className="space-y-4">
   <div>
     <label className="block text-sm mb-2 font-medium text-gray-700">Full Name</label>
     <input 
       type="text" 
+      name="fullName"
       placeholder="Full Name" 
+      value={form.fullName}
+      onChange={handleInputChange}
       className="w-full border border-gray-300 p-2" 
       required 
     />
@@ -210,7 +281,10 @@ const Franchise = () => {
     <label className="block text-sm mb-2 font-medium text-gray-700">Mobile Number</label>
     <input 
       type="text" 
+      name="mobileNumber"
       placeholder="Mobile Number" 
+      value={form.mobileNumber}
+      onChange={handleInputChange}
       className="w-full border border-gray-300 p-2" 
       required 
     />
@@ -220,7 +294,10 @@ const Franchise = () => {
     <label className="block text-sm mb-2 font-medium text-gray-700">Email Address</label>
     <input 
       type="email" 
+      name="email"
       placeholder="Email Address" 
+      value={form.email}
+      onChange={handleInputChange}
       className="w-full border border-gray-300 p-2" 
       required 
     />
@@ -230,7 +307,10 @@ const Franchise = () => {
     <label className="block text-sm mb-2 font-medium text-gray-700">City</label>
     <input 
       type="text" 
+      name="city"
       placeholder="City" 
+      value={form.city}
+      onChange={handleInputChange}
       className="w-full border border-gray-300 p-2" 
       required 
     />
@@ -240,7 +320,10 @@ const Franchise = () => {
     <label className="block text-sm mb-2 font-medium text-gray-700">Education</label>
     <input 
       type="text" 
+      name="educationStatus"
       placeholder="Education" 
+      value={form.educationStatus}
+      onChange={handleInputChange}
       className="w-full border border-gray-300 p-2" 
     />
   </div>
@@ -249,6 +332,9 @@ const Franchise = () => {
     <label className="block text-sm mb-2 font-medium text-gray-700">Date of Birth</label>
     <input 
       type="date" 
+      name="dob"
+      value={form.dob}
+      onChange={handleInputChange}
       className="w-full border border-gray-300 p-2" 
     />
   </div>
@@ -256,7 +342,10 @@ const Franchise = () => {
   <div>
     <label className="block text-sm mb-2 font-medium text-gray-700">Message</label>
     <textarea 
+      name="message"
       placeholder="Message" 
+      value={form.message}
+      onChange={handleInputChange}
       className="w-full border border-gray-300 p-2" 
       rows={3}>
     </textarea>
@@ -271,6 +360,9 @@ const Franchise = () => {
     <input 
       type="checkbox" 
       id="permission" 
+      name="promotionalConsent"
+      checked={form.promotionalConsent}
+      onChange={handleInputChange}
       className="mt-1" 
     />
     <label htmlFor="permission" className="leading-snug">
@@ -287,12 +379,15 @@ const Franchise = () => {
     <input 
       type="checkbox" 
       id="dataPermission" 
+      name="personalDataConsent"
+      checked={form.personalDataConsent}
+      onChange={handleInputChange}
       className="mt-1 mr-2" 
     />
     <label htmlFor="dataPermission" className="leading-snug">
       At Keller Williams Saudi Arabia, we care about your security. In order to fulfill our obligations to inform 
       arising from Article 10 of the Personal Data Protection Law, you can obtain your 
-      <span className="text-black font-semibold"> “Personal Data Protection Information and Personal Data Sharing Permission”</span> 
+      <span className="text-black font-semibold"> &ldquo;Personal Data Protection Information and Personal Data Sharing Permission&rdquo;</span> 
       from our valued visitors. We kindly request you to read and approve the text in the link below.
     </label>
   </div>
@@ -302,9 +397,14 @@ const Franchise = () => {
             {/* Submit button */}
             <button
               type="submit"
-              className="w-full bg-[rgb(206,32,39,255)] text-white font-bold py-3 mt-4"
+              disabled={isSubmitting}
+              className={`w-full font-bold py-3 mt-4 ${
+                isSubmitting 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-[rgb(206,32,39,255)] text-white'
+              }`}
             >
-              SUBMIT
+              {isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}
             </button>
           </form>
         </div>

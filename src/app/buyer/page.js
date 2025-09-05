@@ -1,6 +1,6 @@
 
 'use client'
-import React, { useState, useEffect, Suspense } from 'react';
+import React, { useState, useEffect, Suspense, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { FaSearch, FaBars, FaTimes, FaBuilding, FaChevronDown, FaChevronRight, FaChevronLeft,FaCheck  } from "react-icons/fa";
@@ -17,20 +17,48 @@ const PropertiesContent = () => {
   const [price, setPrice] = useState(750000);
   const [visibleCount, setVisibleCount] = useState(6);
   const [prevHeroIndex, setPrevHeroIndex] = useState(null);
-  const [propertyType, setPropertyType] = useState('PROPERTY TYPE');
-  const [marketCenter, setMarketCenter] = useState('MARKET CENTER');
-  const [propertySubType, setPropertySubType] = useState('');
-  const [city, setCity] = useState('CITY');
-
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
   const [showFilters, setShowFilters] = useState(false);
   const [showMap, setShowMap] = useState(false);
-  const [minPrice, setMinPrice] = useState('');
-  const [maxPrice, setMaxPrice] = useState('');
   
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [perPage, setPerPage] = useState(6);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [hasPrevPage, setHasPrevPage] = useState(false);
+  
+  // Filter state - separate from display state
+  // Note: sale: false in appliedFilters means no sale filter is applied by default
+  // This ensures all properties are shown initially, regardless of the checkbox state
+  const [appliedFilters, setAppliedFilters] = useState({
+    selected: { sale: false, rent: false, commercial: false },
+    propertyType: 'PROPERTY TYPE',
+    propertySubType: '',
+    city: 'CITY',
+    minPrice: '',
+    maxPrice: '',
+    includeNewHomes: true,
+    marketCenter: 'MARKET CENTER'
+  });
 
+  // Display state for form inputs
+  // Note: sale: true in displayFilters means the checkbox is checked by default
+  // but it doesn't affect filtering until search button is clicked
+  const [displayFilters, setDisplayFilters] = useState({
+    selected: { sale: true, rent: false, commercial: false },
+    propertyType: 'PROPERTY TYPE',
+    propertySubType: '',
+    city: 'CITY',
+    minPrice: '',
+    maxPrice: '',
+    includeNewHomes: true,
+    marketCenter: 'MARKET CENTER'
+  });
   
   const formatPrice = (price) => {
     if (typeof price === 'number') {
@@ -41,58 +69,252 @@ const PropertiesContent = () => {
     }
     return price || '';
   };
+  
   const toggleFilters = () => {
     setShowFilters(!showFilters);
   };
-  const bedIconUrl = "/bed.png";
-  const bathIconUrl = "/bath.png";
 
-  const [selected, setSelected] = useState({
-    sale: true,
-    rent: false,
-    commercial: false,
-  });
-  useEffect(() => {
-    async function fetchProperties() {
+  // Reset pagination when filters change
+  const resetPagination = useCallback((newPerPage = perPage) => {
+    setCurrentPage(1);
+    // Clear all properties and reload first page
+    setProperties([]);
+    setHasNextPage(false);
+    setHasPrevPage(false);
+    setTotalPages(1);
+    setTotalItems(0);
+    // Set perPage to 6 for filtered results
+    setPerPage(newPerPage);
+    // Reset visible count to show only first page
+    setVisibleCount(newPerPage);
+  }, [perPage]);
+
+  // Apply filters function - only called when search button is clicked
+  const applyFilters = useCallback(async () => {
+    // Update applied filters with current display values
+    setAppliedFilters({
+      selected: { ...displayFilters.selected },
+      propertyType: displayFilters.propertyType,
+      propertySubType: displayFilters.propertySubType,
+      city: displayFilters.city,
+      minPrice: displayFilters.minPrice,
+      maxPrice: displayFilters.maxPrice,
+      includeNewHomes: displayFilters.includeNewHomes,
+      marketCenter: displayFilters.marketCenter
+    });
+    
+    // Reset pagination with 6 properties per page for filtered results
+    resetPagination(6);
+    
+    // Prepare API request body with filter parameters
+    const requestBody = {
+      page: 1,
+      limit: 6  // Set to 6 properties per page for filtered results
+    };
+    
+    // Add forsale/forrent parameters based on selected filters
+    if (displayFilters.selected.sale && !displayFilters.selected.rent) {
+      requestBody.forsale = true;
+    } else if (displayFilters.selected.rent && !displayFilters.selected.sale) {
+      requestBody.forrent = true;
+    }
+    
+    // Add property_type parameter if commercial is selected
+    if (displayFilters.selected.commercial) {
+      requestBody.property_type = 'Commercial';
+    }
+    
+    // Reload properties with new filters
+    try {
       setLoading(true);
-      setError(null);
-      try {
-        const res = await fetch('https://kw-backend-q6ej.vercel.app/api/listings/list/properties', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            limit: 1000,
-           
-            page: 1,
-          
-          })
-        });
-        
-
-
-        const data = await res.json();
+      const res = await fetch('https://kwbackend.jc2g.in/api/listings/list/properties', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+      
+      const data = await res.json();
+      
+      if (data.success) {
         let fetched = [];
         if (Array.isArray(data?.data)) {
           fetched = data.data;
         }
-        console.log('Fetched properties:', fetched.slice(0, 2)); // Debug: log first 2 properties
         
-        // Debug: Log sample properties to see list_category values
-        if (fetched.length > 0) {
-          console.log('=== SAMPLE PROPERTIES FOR DEBUG ===');
-          fetched.slice(0, 3).forEach((prop, idx) => {
-            console.log(`Property ${idx + 1}:`, {
-              id: prop._kw_meta?.id || prop.id,
-              list_category: prop.list_category,
-              category: prop.category,
-              prop_type: prop.prop_type,
-              city: prop.list_address?.city
-            });
-          });
-          console.log('=== END DEBUG ===');
+        // Update pagination state from API response
+        if (data.pagination) {
+          setCurrentPage(data.pagination.current_page);
+          setTotalPages(data.pagination.total_pages);
+          setTotalItems(data.pagination.total_items);
+          setPerPage(data.pagination.per_page);
+          setHasNextPage(data.pagination.has_next_page);
+          setHasPrevPage(data.pagination.has_prev_page);
         }
         
-        setProperties(fetched);
+        // Ensure no duplicates in the fetched data
+        const uniqueProperties = [];
+        const seenIds = new Set();
+        
+        fetched.forEach(prop => {
+          const propId = prop._kw_meta?.id || prop.id;
+          if (propId && !seenIds.has(propId)) {
+            seenIds.add(propId);
+            uniqueProperties.push(prop);
+          } else if (!propId) {
+            // If no ID, add with timestamp to ensure uniqueness
+            uniqueProperties.push({
+              ...prop,
+              _temp_id: `temp-${Date.now()}-${Math.random()}`
+            });
+          }
+        });
+        
+        setProperties(uniqueProperties);
+      }
+    } catch (err) {
+      console.error('Error reloading properties after filter change:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [displayFilters, resetPagination]);
+  const bedIconUrl = "/bed.png";
+  const bathIconUrl = "/bath.png";
+
+  // Update display filters when form inputs change
+  const updateDisplayFilter = (key, value) => {
+    setDisplayFilters(prev => ({
+      ...prev,
+      [key]: value
+    }));
+  };
+
+  const updateSelectedFilter = (key, value) => {
+    setDisplayFilters(prev => ({
+      ...prev,
+      selected: {
+        ...prev.selected,
+        [key]: value
+      }
+    }));
+  };
+
+  // Update visible count when properties change
+  useEffect(() => {
+    // For initial load (page 1), show only perPage properties
+    // For subsequent pages, show all loaded properties
+    if (currentPage === 1) {
+      // Ensure we only show the expected number of properties for the first page
+      const expectedCount = Math.min(perPage, properties.length);
+      setVisibleCount(expectedCount);
+      console.log(`Page 1: Setting visible count to ${expectedCount} (perPage: ${perPage}, properties: ${properties.length})`);
+    } else {
+      // Show all loaded properties when on page 2+
+      setVisibleCount(properties.length);
+      console.log(`Page ${currentPage}: Setting visible count to ${properties.length} (all loaded properties)`);
+    }
+  }, [properties.length, currentPage, perPage]);
+  useEffect(() => {
+    async function fetchProperties(page = 1, append = false) {
+      setLoading(true);
+      setError(null);
+      try {
+        // Prepare API request body with filter parameters
+        const requestBody = {
+          page: page,
+          limit: perPage
+        };
+        
+        // Add forsale/forrent parameters based on applied filters
+        if (appliedFilters.selected.sale && !appliedFilters.selected.rent) {
+          requestBody.forsale = true;
+        } else if (appliedFilters.selected.rent && !appliedFilters.selected.sale) {
+          requestBody.forrent = true;
+        }
+        
+        // Add property_type parameter if commercial is selected
+        if (appliedFilters.selected.commercial) {
+          requestBody.property_type = 'Commercial';
+        }
+        
+        const res = await fetch('https://kwbackend.jc2g.in/api/listings/list/properties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+        
+        const data = await res.json();
+        
+        if (data.success) {
+          let fetched = [];
+          if (Array.isArray(data?.data)) {
+            fetched = data.data;
+          }
+          
+          // Update pagination state from API response
+          if (data.pagination) {
+            setCurrentPage(data.pagination.current_page);
+            setTotalPages(data.pagination.total_pages);
+            setTotalItems(data.pagination.total_items);
+            setPerPage(data.pagination.per_page);
+            setHasNextPage(data.pagination.has_next_page);
+            setHasPrevPage(data.pagination.has_prev_page);
+          }
+          
+          console.log(`Fetched ${fetched.length} properties (requested: ${perPage}, page: ${page})`);
+          
+          // Debug: Log sample properties to see list_category values
+          if (fetched.length > 0) {
+            console.log('=== SAMPLE PROPERTIES FOR DEBUG ===');
+            fetched.slice(0, 3).forEach((prop, idx) => {
+              console.log(`Property ${idx + 1}:`, {
+                id: prop._kw_meta?.id || prop.id,
+                list_category: prop.list_category,
+                category: prop.category,
+                prop_type: prop.prop_type,
+                city: prop.list_address?.city
+              });
+            });
+            console.log('=== END DEBUG ===');
+          }
+          
+          // If appending, add to existing properties, otherwise replace
+          if (append) {
+            setProperties(prev => {
+              // Create a map of existing properties by ID to avoid duplicates
+              const existingIds = new Set(prev.map(p => p._kw_meta?.id || p.id));
+              const newProperties = fetched.filter(prop => {
+                const propId = prop._kw_meta?.id || prop.id;
+                return propId && !existingIds.has(propId);
+              });
+              return [...prev, ...newProperties];
+            });
+          } else {
+            // For initial load, also ensure no duplicates within the fetched data
+            const uniqueProperties = [];
+            const seenIds = new Set();
+            
+            fetched.forEach(prop => {
+              const propId = prop._kw_meta?.id || prop.id;
+              if (propId && !seenIds.has(propId)) {
+                seenIds.add(propId);
+                uniqueProperties.push(prop);
+              } else if (!propId) {
+                // If no ID, add with timestamp to ensure uniqueness
+                uniqueProperties.push({
+                  ...prop,
+                  _temp_id: `temp-${Date.now()}-${Math.random()}`
+                });
+              }
+            });
+            
+            // Ensure we don't exceed perPage for initial load
+            const limitedProperties = uniqueProperties.slice(0, perPage);
+            console.log(`Initial load: Limiting ${uniqueProperties.length} properties to ${limitedProperties.length} (perPage: ${perPage})`);
+            setProperties(limitedProperties);
+          }
+        } else {
+          setError(data.message || 'Failed to load properties');
+        }
       } catch (err) {
         setError('Failed to load properties');
         console.error('Error fetching properties:', err);
@@ -100,18 +322,42 @@ const PropertiesContent = () => {
         setLoading(false);
       }
     }
-    fetchProperties();
-  }, []);
+    
+    // Initial load
+    if (currentPage === 1) {
+      fetchProperties(1, false);
+    }
+  }, [currentPage, perPage, appliedFilters]); // Include dependencies
   
-  // Preselect city from query parameter and apply filter
+  // Preselect city and category from query parameters and apply filter
   const searchParams = useSearchParams();
   useEffect(() => {
     const qpCity = searchParams?.get('city');
+    const qpCategory = searchParams?.get('category');
+    
     if (qpCity) {
-      setCity(qpCity);
+      updateDisplayFilter('city', qpCity);
+    }
+    
+    if (qpCategory) {
+      if (qpCategory === 'sale') {
+        updateDisplayFilter('selected', { sale: true, rent: false, commercial: false });
+        // Also update applied filters for query parameters
+        setAppliedFilters(prev => ({
+          ...prev,
+          selected: { sale: true, rent: false, commercial: false }
+        }));
+      } else if (qpCategory === 'rent') {
+        updateDisplayFilter('selected', { sale: false, rent: true, commercial: false });
+        // Also update applied filters for query parameters
+        setAppliedFilters(prev => ({
+          ...prev,
+          selected: { sale: false, rent: true, commercial: false }
+        }));
+      }
     }
   }, [searchParams]);
-  const [includeNewHomes, setIncludeNewHomes] = useState(true);
+  // Remove this line as it's now handled in displayFilters
   const [showSSTC, setShowSSTC] = useState(true);
 
   // Enhanced filtering logic
@@ -135,15 +381,22 @@ const PropertiesContent = () => {
     }
     
     if (key === 'CITY') {
-      const cityValues = [
+      // Search across multiple address fields: city, street name, and full street address
+      const addressFields = [
         property.city,
         property.region,
         property.municipality,
         property.list_address?.city,
-        property.property_address?.city
+        property.property_address?.city,
+        property.list_address?.street_name,
+        property.property_address?.street_name,
+        property.list_address?.full_street_address,
+        property.property_address?.full_street_address,
+        property.street_name,
+        property.full_street_address
       ].filter(val => val != null && val !== undefined).map(val => String(val).toLowerCase().trim());
       
-      return cityValues.some(city => city.includes(v) || v.includes(city));
+      return addressFields.some(field => field.includes(v) || v.includes(field));
     }
     
     return true;
@@ -151,47 +404,85 @@ const PropertiesContent = () => {
 
   const filteredProperties = properties.filter(property => {
     // Filter by price
-    const propPrice = property.price || property.current_list_price || 0;
-    if (minPrice && propPrice < minPrice) return false;
-    if (maxPrice && propPrice > maxPrice) return false;
+    const propPrice = Number(property.price || property.current_list_price || 0);
+    const minPriceNum = appliedFilters.minPrice ? Number(appliedFilters.minPrice) : 0;
+    const maxPriceNum = appliedFilters.maxPrice ? Number(appliedFilters.maxPrice) : Infinity;
+    
+    if (minPriceNum > 0 && propPrice < minPriceNum) return false;
+    if (maxPriceNum > 0 && propPrice > maxPriceNum) return false;
+    
+    // Filter by commercial checkbox - if commercial is selected, only show commercial properties
+    if (appliedFilters.selected.commercial) {
+      const propType = String(property.prop_type || property.type || '').toLowerCase().trim();
+      if (propType !== 'commercial') {
+        return false;
+      }
+    }
+    
+    // Filter by list_category (sale/rent) based on selected state
+    // Only apply these filters if at least one is explicitly selected
+    if (appliedFilters.selected.sale || appliedFilters.selected.rent) {
+      const propListCategory = String(property.list_category || property.category || '').toLowerCase().trim();
+      
+      // If only sale is selected
+      if (appliedFilters.selected.sale && !appliedFilters.selected.rent) {
+        if (!propListCategory.includes('sale') && !propListCategory.includes('buy') && !propListCategory.includes('forsale')) {
+          return false;
+        }
+      }
+      
+      // If only rent is selected
+      if (appliedFilters.selected.rent && !appliedFilters.selected.sale) {
+        if (!propListCategory.includes('rent') && !propListCategory.includes('forrent') && !propListCategory.includes('lease')) {
+          return false;
+        }
+      }
+      
+      // If both are selected, show all properties (no filtering needed)
+    }
+    // If neither sale nor rent is selected in appliedFilters, show all properties regardless of category
     
     // Filter by property type - only if a type is selected
-    if (propertyType && propertyType !== 'PROPERTY TYPE') {
+    if (appliedFilters.propertyType && appliedFilters.propertyType !== 'PROPERTY TYPE') {
       const propType = String(property.prop_type || property.type || '').toLowerCase().trim();
-      const selectedType = String(propertyType).toLowerCase().trim();
+      const selectedType = String(appliedFilters.propertyType).toLowerCase().trim();
       if (propType !== selectedType) return false;
     }
     
     // Filter by market center - only if a market center is selected
-    if (marketCenter && marketCenter !== 'MARKET CENTER') {
+    if (appliedFilters.marketCenter && appliedFilters.marketCenter !== 'MARKET CENTER') {
       const propMarketCenter = String(property.market_center || property.center || '').toLowerCase().trim();
-      const selectedMarketCenter = String(marketCenter).toLowerCase().trim();
+      const selectedMarketCenter = String(appliedFilters.marketCenter).toLowerCase().trim();
       if (propMarketCenter !== selectedMarketCenter) return false;
     }
     
     // Filter by property subtype - only if a subtype is selected
-    if (propertySubType && propertySubType !== '') {
+    if (appliedFilters.propertySubType && appliedFilters.propertySubType !== '') {
       const propSubType = String(property.prop_subtype || property.property_subtype || property.subtype || '').toLowerCase().trim();
-      const selectedSubType = String(propertySubType).toLowerCase().trim();
-      
-      // Debug logging for property subtype filtering
-      console.log(`Property: ${property.id || 'unknown'}, Subtype: "${propSubType}", Selected: "${selectedSubType}", Match: ${propSubType === selectedSubType}`);
+      const selectedSubType = String(appliedFilters.propertySubType).toLowerCase().trim();
       
       if (propSubType !== selectedSubType) return false;
     }
     
-    // Filter by city - only if a city is selected
-    if (city && city !== 'CITY') {
-      const cityValues = [
+    // Filter by city/address - only if a city/address is selected
+    if (appliedFilters.city && appliedFilters.city !== 'CITY') {
+      // Search across multiple address fields: city, street name, and full street address
+      const addressFields = [
         property.city,
         property.region,
         property.municipality,
         property.list_address?.city,
-        property.property_address?.city
+        property.property_address?.city,
+        property.list_address?.street_name,
+        property.property_address?.street_name,
+        property.list_address?.full_street_address,
+        property.property_address?.full_street_address,
+        property.street_name,
+        property.full_street_address
       ].filter(val => val != null && val !== undefined).map(val => String(val).toLowerCase().trim());
       
-      const selectedCity = String(city).toLowerCase().trim();
-      if (!cityValues.some(cityVal => cityVal === selectedCity)) return false;
+      const selectedCity = String(appliedFilters.city).toLowerCase().trim();
+      if (!addressFields.some(field => field.includes(selectedCity) || selectedCity.includes(field))) return false;
     }
     
     return true;
@@ -201,40 +492,114 @@ const PropertiesContent = () => {
   useEffect(() => {
     if (properties.length > 0) {
       console.log('Filter states:', {
-        propertyType,
-        marketCenter,
-        propertySubType,
-        city,
-        minPrice,
-        maxPrice,
+        displayFilters,
+        appliedFilters,
         totalProperties: properties.length,
         filteredCount: filteredProperties.length
       });
-      
-      // Log when filters are applied
-      if (propertyType !== 'PROPERTY TYPE') {
-        console.log(`Filtering by property type: ${propertyType}`);
-      }
-      if (city !== 'CITY') {
-        console.log(`Filtering by city: ${city}`);
-      }
-      if (propertySubType !== '') {
-        console.log(`Filtering by property subtype: ${propertySubType}`);
-      }
-      
-      // Debug: Log available property subtypes
-      const availableSubtypes = Array.from(
-        new Set(
-          properties.map(
-            (p) => p.prop_subtype || p.property_subtype || p.subtype
-          )
-        )
-      ).filter(Boolean);
-      console.log('Available property subtypes:', availableSubtypes);
     }
-  }, [propertyType, marketCenter, propertySubType, city, minPrice, maxPrice, properties, filteredProperties]);
+  }, [displayFilters, appliedFilters, properties, filteredProperties]);
 
+  // Generate unique key for properties
+  const generatePropertyKey = (property, index) => {
+    const propId = property._kw_meta?.id || property.id;
+    if (propId) {
+      return `${propId}-${index}`;
+    }
+    // Fallback to timestamp + index if no ID
+    return `prop-${Date.now()}-${index}`;
+  };
 
+  // View More function
+  const goToNextPage = useCallback(async () => {
+    if (hasNextPage) {
+      const nextPage = currentPage + 1;
+      console.log(`Loading next page: ${nextPage}`);
+      setCurrentPage(nextPage);
+      
+      // Fetch and append next page properties
+      try {
+        setLoadingMore(true);
+        
+        // Prepare API request body with filter parameters
+        const requestBody = {
+          page: nextPage,
+          limit: perPage
+        };
+        
+        // Add forsale/forrent parameters based on applied filters
+        if (appliedFilters.selected.sale && !appliedFilters.selected.rent) {
+          requestBody.forsale = true;
+        } else if (appliedFilters.selected.rent && !appliedFilters.selected.sale) {
+          requestBody.forrent = true;
+        }
+        
+        // Add property_type parameter if commercial is selected
+        if (appliedFilters.selected.commercial) {
+          requestBody.property_type = 'Commercial';
+        }
+        
+        const res = await fetch('https://kwbackend.jc2g.in/api/listings/list/properties', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody)
+        });
+        
+        const data = await res.json();
+        
+        if (data.success && Array.isArray(data?.data)) {
+          // Append new properties to existing ones with deduplication
+          setProperties(prev => {
+            // Create a map of existing properties by ID to avoid duplicates
+            const existingIds = new Set(prev.map(p => p._kw_meta?.id || p.id));
+            const newProperties = data.data.filter(prop => {
+              const propId = prop._kw_meta?.id || prop.id;
+              return propId && !existingIds.has(propId);
+            });
+            return [...prev, ...newProperties];
+          });
+          
+          console.log(`Appending ${data.data.length} new properties`);
+          
+          // Update pagination state
+          if (data.pagination) {
+            setCurrentPage(data.pagination.current_page);
+            setTotalPages(data.pagination.total_pages);
+            setTotalItems(data.pagination.total_items);
+            setHasNextPage(data.pagination.has_next_page);
+            setHasPrevPage(data.pagination.has_prev_page);
+          }
+          
+          // The useEffect will automatically update visibleCount when properties change
+        }
+      } catch (err) {
+        console.error('Error fetching next page:', err);
+      } finally {
+        setLoadingMore(false);
+      }
+    }
+  }, [hasNextPage, currentPage, perPage, appliedFilters.selected.sale, appliedFilters.selected.rent, appliedFilters.selected.commercial]);
+  const [heroSrc, setHeroSrc] = useState('/')
+  const[page,setPage]=useState('');
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/rental-search');
+        if (!res.ok) return;
+       
+        
+        const page = await res.json();
+        console.log(page);
+        setPage(page)
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
 
  
   return (
@@ -248,12 +613,12 @@ const PropertiesContent = () => {
       <div className="absolute top-0 left-0 w-[100px] h-[100px] md:w-[150px] md:h-[150px] bg-[rgb(206,32,39,255)]  z-0"></div>
   
   {/* Hero Section */}
-  <div className="relative bg-gray-100">
+  <div className="relative bg-gray-100 md:pb-10">
   
     <section className={`relative w-full ${showFilters ? 'h-[120vh] md:h-[125vh]' : 'h-screen md:h-screen'} text-white overflow-hidden transition-all duration-500 ease-in-out`}>
       {/* Background Image with previous blurring out and next coming in */}
       <Image
-              src='/1.jpg'
+              src={heroSrc}
               alt="Previous Hero Background"
               layout="fill"
               
@@ -265,19 +630,32 @@ const PropertiesContent = () => {
              <div className={`absolute ${showFilters ? 'bottom-0' : 'bottom-20'}  md:bottom-0 left-0 w-full z-10 flex flex-col items-center text-center text-white py-2 md:py-14 px-4`}>
   {/* Title */}
   <h2 className="text-3xl font-semibold md:pb-8 pb-4">
-  {loading
-    ? 'Loading...'
-    : `${filteredProperties.length} Properties`}
-</h2>
+    {loading
+      ? 'Loading...'
+      : `${totalItems} Properties`}
+  </h2>
+  
+  {/* Properties Count Info */}
+  {/* {totalItems > 0 && (
+    <div className="text-sm text-white/80 mb-4">
+      {loading ? (
+        <span>Loading properties...</span>
+      ) : (
+        `Showing ${properties.length} of ${totalItems} properties`
+      )}
+    </div>
+  )} */}
 
 
   {/* Line 1 - For Sale + To Rent */}
   <div className="flex md:gap-4 gap-2 md:pb-4 pb-2">
     {/* For Sale */}
     <button
-  onClick={() => setSelected((prev) => ({ ...prev, sale: !prev.sale }))}
+  onClick={() => {
+    updateSelectedFilter('sale', !displayFilters.selected.sale);
+  }}
   className={`flex items-center md:gap-8 gap-2 px-4 py-2 font-semibold border ${
-    selected.sale
+    displayFilters.selected.sale
       ? "bg-[rgb(206,32,39,255)] border-[rgb(206,32,39,255)] text-white"
       : "bg-white border-gray-300 text-black"
   }`}
@@ -285,33 +663,35 @@ const PropertiesContent = () => {
   For Sale
   <span
     className={`w-4 h-4 border flex items-center justify-center ${
-      selected.sale
+      displayFilters.selected.sale
         ? "bg-white border-[rgb(206,32,39,255)]"
         : "border-gray-400 bg-white"
     }`}
   >
-    {selected.sale && <FaCheck className="text-[rgb(206,32,39,255)] text-xs" />}
+    {displayFilters.selected.sale && <FaCheck className="text-[rgb(206,32,39,255)] text-xs" />}
   </span>
 </button>
 
     {/* To Rent */}
     <button
-      onClick={() => setSelected((prev) => ({ ...prev, rent: !prev.rent }))}
+      onClick={() => {
+        updateSelectedFilter('rent', !displayFilters.selected.rent);
+      }}
       className={`flex items-center md:gap-8 gap-2 px-4 py-2 font-semibold border ${
-        selected.rent
+        displayFilters.selected.rent
           ? "bg-[rgb(206,32,39,255)] border-[rgb(206,32,39,255)] text-white"
           : "bg-white border-gray-300 text-black"
       }`}
     >
       To Rent
-      <span
-        className={`w-4 h-4 border flex items-center justify-center ${
-          selected.rent
-            ? "bg-white text-[rgb(206,32,39,255)]"
-            : "border-gray-400 bg-white"
-        }`}
-      >
-        {selected.rent && <FaCheck className="text-[rgb(206,32,39,255)] text-xs" />}
+              <span
+          className={`w-4 h-4 border flex items-center justify-center ${
+            displayFilters.selected.rent
+              ? "bg-white border-[rgb(206,32,39,255)]"
+              : "border-gray-400 bg-white"
+          }`}
+        >
+        {displayFilters.selected.rent && <FaCheck className="text-[rgb(206,32,39,255)] text-xs" />}
       </span>
     </button>
   </div>
@@ -319,11 +699,11 @@ const PropertiesContent = () => {
   {/* Line 2 - Commercial */}
   <div className="mb-4">
     <button
-      onClick={() =>
-        setSelected((prev) => ({ ...prev, commercial: !prev.commercial }))
-      }
+      onClick={() => {
+        updateSelectedFilter('commercial', !displayFilters.selected.commercial);
+      }}
       className={`flex items-center md:gap-8 gap-2 px-4 py-2 font-semibold border ${
-        selected.commercial
+        displayFilters.selected.commercial
           ? "bg-[rgb(206,32,39,255)] border-[rgb(206,32,39,255)] text-white"
           : "bg-white border-gray-300 text-black"
       }`}
@@ -331,12 +711,12 @@ const PropertiesContent = () => {
       Commercial
       <span
         className={`w-4 h-4 border flex items-center justify-center ${
-          selected.commercial
-            ? "bg-white text-[rgb(206,32,39,255)]"
+          displayFilters.selected.commercial
+            ? "bg-white border-[rgb(206,32,39,255)]"
             : "border-gray-400 bg-white"
         }`}
       >
-        {selected.commercial && <FaCheck className="text-[rgb(206,32,39,255)] text-xs" />}
+        {displayFilters.selected.commercial && <FaCheck className="text-[rgb(206,32,39,255)] text-xs" />}
       </span>
     </button>
   </div>
@@ -345,8 +725,10 @@ const PropertiesContent = () => {
   <div className="mb-6 w-full max-w-sm">
   <select 
     className="w-full px-4 py-2 text-black border bg-white border-gray-300 outline-none"
-    value={propertyType === 'PROPERTY TYPE' ? '' : propertyType}
-    onChange={(e) => setPropertyType(e.target.value || 'PROPERTY TYPE')}
+    value={displayFilters.propertyType === 'PROPERTY TYPE' ? '' : displayFilters.propertyType}
+    onChange={(e) => {
+      updateDisplayFilter('propertyType', e.target.value || 'PROPERTY TYPE');
+    }}
   >
   <option value="">Select Type</option>
   {Array.from(
@@ -366,8 +748,10 @@ const PropertiesContent = () => {
   <label className="flex justify-start text-base">Location</label>
   <select
     className="w-full bg-white px-4 py-2 text-black outline-none border border-gray-300"
-    value={city === 'CITY' ? '' : city}
-    onChange={(e) => setCity(e.target.value || 'CITY')}
+    value={displayFilters.city === 'CITY' ? '' : displayFilters.city}
+    onChange={(e) => {
+      updateDisplayFilter('city', e.target.value || 'CITY');
+    }}
   >
   <option value="">Select Location</option>
 {Array.from(
@@ -442,8 +826,10 @@ const PropertiesContent = () => {
   </label>
   <select 
     className="border border-gray-300 p-2 w-full bg-white text-black"
-    value={propertySubType}
-    onChange={(e) => setPropertySubType(e.target.value)}
+    value={displayFilters.propertySubType}
+    onChange={(e) => {
+      updateDisplayFilter('propertySubType', e.target.value);
+    }}
   >
     <option value="">No Preference</option>
     {Array.from(
@@ -469,8 +855,10 @@ const PropertiesContent = () => {
   </label>
   <select 
     className="border border-gray-300 p-2 w-full bg-white text-black"
-    value={minPrice}
-    onChange={(e) => setMinPrice(e.target.value)}
+    value={displayFilters.minPrice}
+    onChange={(e) => {
+      updateDisplayFilter('minPrice', e.target.value);
+    }}
   >
     <option value="">No Preference</option>
     {Array.from(
@@ -497,8 +885,10 @@ const PropertiesContent = () => {
   </label>
   <select 
     className="border border-gray-300 p-2 w-full bg-white text-black"
-    value={maxPrice}
-    onChange={(e) => setMaxPrice(e.target.value)}
+    value={displayFilters.maxPrice}
+    onChange={(e) => {
+      updateDisplayFilter('maxPrice', e.target.value);
+    }}
   >
     <option value="">No Preference</option>
     {Array.from(
@@ -530,7 +920,7 @@ const PropertiesContent = () => {
       {/* YES Option */}
       <label
         className={`flex justify-between items-center font-semibold w-30 px-4 py-2 border cursor-pointer ${
-          includeNewHomes
+          displayFilters.includeNewHomes
             ? "bg-[rgb(206,32,39,255)] text-white border-[rgb(206,32,39,255)]"
             : "bg-white text-black"
         }`}
@@ -538,25 +928,25 @@ const PropertiesContent = () => {
         <span>Yes</span>
         <span
           className={`w-4 h-4 border bg-white flex items-center justify-center ${
-            includeNewHomes ? "border-[rgb(206,32,39,255)]" : "border-gray-400"
+            displayFilters.includeNewHomes ? "border-[rgb(206,32,39,255)]" : "border-gray-400"
           }`}
         >
-          {includeNewHomes && (
-            <FaCheck className="text-[rgb(206,32,39,255)] text-[10px]" />
+          {displayFilters.includeNewHomes && (
+            <FaCheck className="text-[10px]" />
           )}
         </span>
         <input
           type="checkbox"
           className="hidden"
-          checked={includeNewHomes}
-          onChange={() => setIncludeNewHomes(true)}
+          checked={displayFilters.includeNewHomes}
+          onChange={() => updateDisplayFilter('includeNewHomes', true)}
         />
       </label>
 
       {/* NO Option */}
       <label
         className={`flex justify-between items-center w-30 font-semibold px-4 py-2  cursor-pointer ${
-          !includeNewHomes
+          !displayFilters.includeNewHomes
             ? "bg-[rgb(206,32,39,255)] text-white border-[rgb(206,32,39,255)]"
             : "bg-white text-black"
         }`}
@@ -564,18 +954,18 @@ const PropertiesContent = () => {
         <span>No</span>
         <span
           className={`w-4 h-4 border bg-white flex items-center justify-center ${
-            !includeNewHomes ? "border-[rgb(206,32,39,255)]" : "border-gray-400"
+            !displayFilters.includeNewHomes ? "border-[rgb(206,32,39,255)]" : "border-gray-400"
           }`}
         >
-          {!includeNewHomes && (
+          {!displayFilters.includeNewHomes && (
             <FaCheck className="text-[rgb(206,32,39,255)] text-[10px]" />
           )}
         </span>
         <input
           type="checkbox"
           className="hidden"
-          checked={!includeNewHomes}
-          onChange={() => setIncludeNewHomes(false)}
+          checked={!displayFilters.includeNewHomes}
+          onChange={() => updateDisplayFilter('includeNewHomes', false)}
         />
       </label>
     </div>
@@ -589,49 +979,79 @@ const PropertiesContent = () => {
       {/* Search button */}
       <div className="text-center">
         <button
-          className="bg-[rgb(206,32,39,255)] text-white px-8 py-2 text-xl font-semibold hover:bg-red-700"
-          onClick={async () => {
-            setLoading(true);
-            setError(null);
-            try {
-              const body = {
-                limit: 2000,
-              
-              };
-              if (city && city !== 'CITY') body.location = city;
-              if (selected?.sale) body.forsale = true;
-              if (selected?.rent) body.forrent = true;
-              if (selected?.commercial) body.property_type = 'Commercial';
-              if (propertyType && propertyType !== 'PROPERTY TYPE') body.property_category = propertyType;
-              if (propertySubType && propertySubType !== '' && propertySubType !== 'No Preference') body.property_subtype = propertySubType;
-              if (minPrice && minPrice !== '' && minPrice !== 'No Preference') body.min_price = minPrice;
-              if (maxPrice && maxPrice !== '' && maxPrice !== 'No Preference') body.max_price = maxPrice;
-              if (includeNewHomes !== undefined) body.include_new_homes = includeNewHomes;
-              
-              console.log('Selected filters:', selected);
-              console.log('Sending to backend:', body);
-
-              const res = await fetch('https://kwbackend.jc2g.in/api/listings/list/properties', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-              });
-              const data = await res.json();
-              const fetched = Array.isArray(data?.data) ? data.data : [];
-              setProperties(fetched);
-              console.log('Search filters applied:', body);
-              console.log('Filtered results:', fetched.length);
-            } catch (err) {
-              console.error('Error fetching filtered properties:', err);
-              setError('Failed to load properties');
-            } finally {
-              setLoading(false);
+          className="bg-[rgb(206,32,39,255)] text-white px-8 py-2 text-xl font-semibold hover:bg-red-700 transition-colors duration-200"
+          onClick={(event) => {
+            // Apply filters when search button is clicked
+            applyFilters();
+            
+            // Show a brief success message
+            const button = event.target;
+            const originalText = button.textContent;
+            button.textContent = 'Filters Applied!';
+            button.className = 'bg-green-600 text-white px-8 py-2 text-xl font-semibold transition-colors duration-200';
+            
+            setTimeout(() => {
+              button.textContent = originalText;
+              button.className = 'bg-[rgb(206,32,39,255)] text-white px-8 py-2 text-xl font-semibold hover:bg-red-700 transition-colors duration-200';
+            }, 2000);
+            
+            // Scroll to results section
+            const resultsSection = document.querySelector('.min-h-screen');
+            if (resultsSection) {
+              resultsSection.scrollIntoView({ behavior: 'smooth' });
             }
           }}
         >
           Search
         </button>
       
+  </div>
+  
+  {/* Active Filters Summary */}
+  <div className="mt-4 text-center">
+    <div className="inline-flex flex-wrap gap-2 justify-center">
+      {appliedFilters.selected.commercial && (
+        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+          Commercial Properties
+        </span>
+      )}
+      {(appliedFilters.selected.sale || appliedFilters.selected.rent) && (
+        <span className="bg-yellow-100 text-yellow-800 px-3 py-1 rounded-full text-sm font-medium">
+          {appliedFilters.selected.sale && appliedFilters.selected.rent ? 'Sale & Rent' : 
+           appliedFilters.selected.sale ? 'For Sale Only' : 'For Rent Only'}
+        </span>
+      )}
+      {appliedFilters.propertyType && appliedFilters.propertyType !== 'PROPERTY TYPE' && (
+        <span className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-medium">
+          Type: {appliedFilters.propertyType}
+        </span>
+      )}
+      {appliedFilters.propertySubType && appliedFilters.propertySubType !== '' && appliedFilters.propertySubType !== 'No Preference' && (
+        <span className="bg-purple-100 text-purple-800 px-3 py-1 rounded-full text-sm font-medium">
+          Subtype: {appliedFilters.propertySubType}
+        </span>
+      )}
+      {appliedFilters.city && appliedFilters.city !== 'CITY' && (
+        <span className="bg-orange-100 text-orange-800 px-3 py-1 rounded-full text-sm font-medium">
+          Location: {appliedFilters.city}
+        </span>
+      )}
+      {appliedFilters.minPrice && appliedFilters.minPrice !== '' && appliedFilters.minPrice !== 'No Preference' && (
+        <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+          Min: ﷼ {formatPrice(appliedFilters.minPrice)}
+        </span>
+      )}
+      {appliedFilters.maxPrice && appliedFilters.maxPrice !== '' && appliedFilters.maxPrice !== 'No Preference' && (
+        <span className="bg-red-100 text-red-800 px-3 py-1 rounded-full text-sm font-medium">
+          Max: ﷼ {formatPrice(appliedFilters.maxPrice)}
+        </span>
+      )}
+      {filteredProperties.length > 0 && (
+        <span className="bg-gray-100 text-gray-800 px-3 py-1 rounded-full text-sm font-medium">
+          {filteredProperties.length} Results
+        </span>
+      )}
+    </div>
   </div>
 </div>
   
@@ -666,6 +1086,22 @@ const PropertiesContent = () => {
   ) : (
     <>
       <div className="mx-6 md:mx-38">
+        {/* Properties Count Display */}
+        {!loading && !error && (
+          <div className="mb-6 text-center">
+            <p className="text-lg text-gray-700">
+              Showing <span className="font-semibold text-[rgb(206,32,39,255)]">{filteredProperties.length}</span> properties
+              {totalItems > filteredProperties.length && (
+                <span className="text-gray-500"> of {totalItems} total</span>
+              )}
+            </p>
+            {/* Debug info */}
+            {/* <p className="text-sm text-gray-500 mt-2">
+              Loaded: {properties.length} | Visible: {visibleCount} | Current Page: {currentPage}
+            </p> */}
+          </div>
+        )}
+        
         {loading ? (
           <div className="flex justify-center items-center h-60">
             <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-red-600"></div>
@@ -676,7 +1112,7 @@ const PropertiesContent = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredProperties.slice(0, visibleCount).map((property, idx) => (
               <div
-                key={property._kw_meta?.id || property.id || idx}
+                key={generatePropertyKey(property, idx)}
                 className="bg-white shadow-2xl overflow-hidden w-full cursor-pointer"
                 onClick={() => {
                   const propertyId =
@@ -805,14 +1241,26 @@ const PropertiesContent = () => {
         )}
       </div>
 
-      {/* View More Button */}
-      {visibleCount < filteredProperties.length && !loading && !error && (
-        <div className="flex justify-center items-center ">
+      {/* View More Properties Button */}
+      {hasNextPage && !loading && (
+        <div className="flex justify-center items-center my-10">
           <button
-            className="md:w-80 w-50 md:py-2 py-2 my-10 md:my-10 px-4 bg-gray-500 text-white text-base md:text-lg font-semibold transition whitespace-nowrap"
-            onClick={() => setVisibleCount((c) => c + 6)}
+            onClick={goToNextPage}
+            disabled={loadingMore}
+            className={`md:w-80 w-50 md:py-3 py-2 px-6 text-white text-base md:text-lg font-semibold  transition-all duration-200 shadow-lg ${
+              loadingMore 
+                ? 'bg-gray-400 cursor-not-allowed opacity-75' 
+                : 'bg-gray-500 hover:shadow-xl'
+            }`}
           >
-            View More Properties..
+            {loadingMore ? (
+              <div className="flex items-center gap-3">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white border-t-transparent"></div>
+                <span>Loading More...</span>
+              </div>
+            ) : (
+              'View More Properties'
+            )}
           </button>
         </div>
       )}

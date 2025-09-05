@@ -199,7 +199,15 @@ import {
                    )}
                    
                  </div>
-                 <button className="w-full bg-[rgb(206,32,39,255)] text-white font-bold text-base py-3 px-4 flex items-center justify-end gap-2">
+                 <button 
+                   className="w-full bg-[rgb(206,32,39,255)] text-white font-bold text-base py-3 px-4 flex items-center justify-end gap-2"
+                   onClick={(e) => {
+                     e.preventDefault();
+                     e.stopPropagation();
+                     localStorage.setItem('selectedProperty', JSON.stringify(property));
+                     router.push(`/propertydetails/${property._kw_meta?.id || property.id}`);
+                   }}
+                 >
      <span>MORE DETAILS</span>
      <FaChevronRight className="text-white w-4 h-4" />
    </button>
@@ -378,7 +386,7 @@ import {
             filters.location = location;
           }
 
-          const response = await axios.post('https://kwbackend.jc2g.in/api/listings/list/properties', filters);
+          const response = await axios.post('https://kw-backend-q6ej.vercel.app/api/listings/list/properties', filters);
           if (currentPage === 1) {
             setProperties(response.data.data);
           } else {
@@ -1311,7 +1319,15 @@ import {
                     )}
                     
                   </div>
-                  <button className="w-full bg-[rgb(206,32,39,255)] text-white font-bold text-xs py-2 px-4 flex items-center justify-end ">
+                  <button 
+                    className="w-full bg-[rgb(206,32,39,255)] text-white font-bold text-xs py-2 px-4 flex items-center justify-end"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      localStorage.setItem('selectedProperty', JSON.stringify(property));
+                      router.push(`/propertydetails/${property._kw_meta?.id || property.id}`);
+                    }}
+                  >
       <span>MORE DETAILS</span>
       <FaChevronRight className="text-white w-4 h-4" />
     </button>

@@ -9,7 +9,8 @@ import { useRouter } from 'next/navigation';
 const Seller = () => {
   const timelineRef = useRef(null);
   const [markerTop, setMarkerTop] = useState(0);
-  
+  const [heroSrc, setHeroSrc] = useState('/')
+  const[page,setPage]=useState('');
 const router=useRouter();
   const steps = [
     {
@@ -68,14 +69,31 @@ Your KW Agent will guide you with a few suggestions such as  +`,
   handleScroll();
   return () => window.removeEventListener('scroll', handleScroll);
 }, []);
-
+useEffect(() => {
+  const fetchPageHero = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/page/slug/five-steps-to-sell');
+      if (!res.ok) return;
+      console.log(res);
+      
+      const page = await res.json();
+      setPage(page)
+      if (page?.backgroundImage) {
+        setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+      }
+    } catch (e) {
+      console.error('Error fetching page hero:', e);
+    }
+  };
+  fetchPageHero();
+}, []);
 
   return (
     <div className="relative">
       <Header />
     <Box
-        src='/steps_to_sell_your_home.jpg'
-          h3="KW Five Steps to Sell"
+        src={heroSrc}
+          h3={page.backgroundOverlayContent}
           image="https://static.wixstatic.com/media/36a881_0ed2d4fa08bb4022acbbb9e48b783092~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/4-removebg-preview.png"
         />
     

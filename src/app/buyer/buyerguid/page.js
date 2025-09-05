@@ -10,7 +10,8 @@ const Buyerguid = () => {
   const router = useRouter();
   const timelineRef = useRef(null);
   const [markerTop, setMarkerTop] = useState(0);
-  
+  const [heroSrc, setHeroSrc] = useState('/');
+  const [page, setPage] = useState('');
 
   const steps = [
     {
@@ -114,7 +115,24 @@ What's Next? +`,
   handleScroll();
   return () => window.removeEventListener('scroll', handleScroll);
 }, []);
-
+useEffect(() => {
+  const fetchPageHero = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/api/page/slug/buyer-guide');
+      if (!res.ok) return;
+      console.log(res);
+      
+      const page = await res.json();
+      setPage(page)
+      if (page?.backgroundImage) {
+        setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+      }
+    } catch (e) {
+      console.error('Error fetching page hero:', e);
+    }
+  };
+  fetchPageHero();
+}, []);
 
   return (
     <div className="relative">
@@ -123,8 +141,8 @@ What's Next? +`,
       
 
         <Box
-        src='/Buyer_guide_page.jpg'
-          h3="Buyer Guide"
+        src={heroSrc}
+          h3={page.backgroundOverlayContent}
           image="/buyer2.jpg"
         />
     

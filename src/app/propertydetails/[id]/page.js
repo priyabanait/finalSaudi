@@ -200,19 +200,21 @@ export default function PropertyListing() {
       try {
         setPageLoading(true);
         // Fetch property by ID from your API
-        const response = await fetch('https://kw-backend-q6ej.vercel.app/api/listings/list/properties', {
+        const response = await fetch('https://kwbackend.jc2g.in/api/listings/list/properties', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            limit: 2000,
             page: 1,
+            limit: 100, // Increased limit to have better chance of finding the property
             // You might need to add a filter for specific ID if your API supports it
           })
         });
 
         const data = await response.json();
+        
+        console.log('Property fetch response:', { success: data.success, dataLength: data.data?.length, id });
         
         if (data.success && data.data) {
           // Find the specific property by ID
@@ -220,6 +222,8 @@ export default function PropertyListing() {
             String(prop._kw_meta?.id) === String(id) || 
             String(prop.id) === String(id)
           );
+          
+          console.log('Found property:', foundProperty ? 'Yes' : 'No');
           
           if (foundProperty) {
             setProperty(foundProperty);
@@ -412,6 +416,21 @@ export default function PropertyListing() {
     );
   }
 
+  if (!property) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen">
+        <h1 className="text-2xl font-bold text-red-600 mb-4">Property Not Found</h1>
+        <p className="text-gray-700 mb-4">The property with ID &quot;{id}&quot; could not be found.</p>
+        <button
+          onClick={() => router.back()}
+          className="bg-[rgb(179,4,4)] text-white px-6 py-2 rounded-lg hover:bg-red-700 transition-colors"
+        >
+          Go Back
+        </button>
+      </div>
+    );
+  }
+
   
   const formatPrice = (price) => {
     return new Intl.NumberFormat('en-US', {
@@ -499,30 +518,32 @@ export default function PropertyListing() {
   </span>
 
   <span>
-    {property.price
+    {property?.price
       ? formatPrice(property.price)
-      : property.current_list_price
+      : property?.current_list_price
       ? formatPrice(property.current_list_price)
       : ""}
   </span>
 </div>
 
-  {property.rental_price ? ` ﷼ ${formatPrice(property.rental_price)}` : ""}
+  {property?.rental_price ? ` ﷼ ${formatPrice(property.rental_price)}` : ""}
 </h1>
           </div>
 
           {/* Main Content */}
           <div className="w-full flex flex-col lg:flex-row justify-between gap-2 md:gap-4">
             {/* Main Image */}
-            <div className="relative w-full h-[180px]  md:h-[500px] ">
-              <Image
-                src={propertyImages[currentImageIndex]}
-                alt="Property"
-                fill
-                className="object-cover "
-                onClick={() => setIsFullscreen(true)}
-                style={{ zIndex: 1 }}
-              />
+            <div className="relative w-full aspect-[16/9] md:aspect-[16/9]">
+  <Image
+    src={propertyImages[currentImageIndex]}
+    alt="Property"
+    fill
+    className="object-cover"
+    onClick={() => setIsFullscreen(true)}
+    style={{ zIndex: 1 }}
+  />
+
+
 
               {/* Arrows */}
               {propertyImages.length > 1 && (
@@ -613,7 +634,7 @@ export default function PropertyListing() {
 
 
             {/* Thumbnail Grid */}
-            <div className="hidden sm:flex flex-col gap-2 overflow-y-auto ml-6 overflow-x-hidden scrollbar-hide h-[180px] md:h-[500px]">
+            <div className="hidden sm:flex flex-col gap-2 overflow-y-auto ml-6 overflow-x-hidden scrollbar-hide aspect-[16/9] md:aspect-[16/9]">
               <div className="grid grid-cols-2 gap-2">
                 {thumbnailImages.map((image, index) => (
                   <div

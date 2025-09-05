@@ -34,6 +34,8 @@ import Box from '@/components/box';
 import Image from 'next/image';
 import { FaPhoneAlt,FaEnvelope } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
+import api from '@/utils/api';
+
 const Jeddah = () => {
 
     const [form, setForm] = useState({
@@ -43,15 +45,65 @@ const Jeddah = () => {
       addressTo: '',
       message: ''
     });
+    const [formData, setFormData] = useState({
+      fullName: '',
+      mobileNumber: '',
+      email: '',
+      city: '',
+      message: ''
+    });
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [submitMessage, setSubmitMessage] = useState('');
     const [status, setStatus] = useState(null); // null | 'success' | 'error'
     // Add state for team members, loading, and error
     const [teamMembers, setTeamMembers] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [heroSrc, setHeroSrc] = useState('/'); 
+  const [page, setPage] = useState('');
     const handleChange = (e) => {
       const { name, value } = e.target;
       setForm((prev) => ({ ...prev, [name]: value }));
     };
+
+    const handleFormInputChange = (e) => {
+      const { name, value } = e.target;
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    };
+
+    const handleFormSubmit = async (e) => {
+      e.preventDefault();
+      setIsSubmitting(true);
+      setSubmitMessage('');
+
+      try {
+        const response = await api.post('/leads', {
+          ...formData,
+          formType: 'jeddah'
+        });
+
+        if (response.status === 200 || response.status === 201) {
+          setSubmitMessage('Thank you! Your message has been sent successfully.');
+          // Reset form
+          setFormData({
+            fullName: '',
+            mobileNumber: '',
+            email: '',
+            city: '',
+            message: ''
+          });
+        }
+      } catch (error) {
+        console.error('Error submitting form:', error);
+        setSubmitMessage('Sorry, there was an error sending your message. Please try again.');
+      } finally {
+        setIsSubmitting(false);
+      }
+    };
+
     const handleSubmit = async (e) => {
       e.preventDefault();
       setStatus(null);
@@ -75,21 +127,22 @@ const Jeddah = () => {
     useEffect(() => {
       const fetchAgents = async () => {
         try {
-          const response = await fetch('https://kw-backend-q6ej.vercel.app/api/agent/2414288');
+          const response = await fetch('http://localhost:5000/api/employee/team/Jeddah');
           if (!response.ok) throw new Error('Failed to fetch agents');
           const data = await response.json();
           // Map backend fields to UI fields
           console.log(data);
           
-          const mappedAgents = Array.isArray(data.data) ? data.data.map(agent => ({
-            name: agent.fullName || agent.name,
-            phone: agent.phoneNumber || agent.phone,
-            email: agent.emailAddress || agent.email,
-            city: agent.city,
-            image: agent.photo || agent.image,
-            title: agent.title || '',
-            _id: agent._id || agent.id,
-            kw_id: agent.kwId || agent.kw_id || ""
+          const mappedAgents = Array.isArray(data.employees) ? data.employees.map(agent => ({
+            name: agent.name,
+            jobTitle:agent.jobTitle,
+            phone: agent.phone,
+            email: agent.email,
+            city: agent.team,
+            image: agent.profileImage ? `http://localhost:5000/${agent.profileImage.replace(/\\/g, '/')}` : null,
+            title: agent.jobTitle || '',
+            _id: agent._id,
+            kw_id: ""
           })) : [];
           setTeamMembers(mappedAgents);
         } catch (err) {
@@ -100,13 +153,30 @@ const Jeddah = () => {
       };
       fetchAgents();
     }, []);
-   
+    useEffect(() => {
+      const fetchPageHero = async () => {
+        try {
+          const res = await fetch('http://localhost:5000/api/page/slug/jeddah');
+          if (!res.ok) return;
+          console.log(res);
+          
+          const page = await res.json();
+          setPage(page)
+          if (page?.backgroundImage) {
+            setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+          }
+        } catch (e) {
+          console.error('Error fetching page hero:', e);
+        }
+      };
+      fetchPageHero();
+    }, []);
     return (
         <div>
         <Header></Header>
           <Box
-       h3="KW Market Center - Jeddah"
-      src="/bgriyadh.jpg"
+       h3={page.backgroundOverlayContent}
+      src={heroSrc}
          image={
            'https://static.wixstatic.com/media/36a881_3c5b1d5faca941ea915b39acfedf52ee~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2-removebg-preview.png'
          }
@@ -154,37 +224,89 @@ const Jeddah = () => {
       {/* Right Side Form */}
       <div className="bg-white shadow-md p-6">
         <h2 className="text-2xl font-medium mb-6  flex justify-center">Contact Us Today</h2>
-        <form className="space-y-4">
+        
+        {/* Submit Message */}
+        {submitMessage && (
+          <div className={`mb-4 p-3 rounded ${submitMessage.includes('error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+            {submitMessage}
+          </div>
+        )}
+
+        <form className="space-y-4" onSubmit={handleFormSubmit}>
           <div>
             <label className="block text-sm mb-2 font-medium">Full Name</label>
-            <input type="text" placeholder="First Name" className="w-full border border-gray-300 p-2" required />
+            <input 
+              type="text" 
+              name="fullName"
+              placeholder="Full Name" 
+              value={formData.fullName}
+              onChange={handleFormInputChange}
+              className="w-full border border-gray-300 p-2" 
+              required 
+            />
           </div>
 
           <div>
             <label className="block text-sm mb-2 font-medium">Mobile Number</label>
-            <input type="text" placeholder="Mobile" className="w-full border border-gray-300 p-2" required />
+            <input 
+              type="text" 
+              name="mobileNumber"
+              placeholder="Mobile" 
+              value={formData.mobileNumber}
+              onChange={handleFormInputChange}
+              className="w-full border border-gray-300 p-2" 
+              required 
+            />
           </div>
 
           <div>
             <label className="block text-sm mb-2 font-medium">Email Address</label>
-            <input type="email" placeholder="Email" className="w-full border border-gray-300 p-2" required />
+            <input 
+              type="email" 
+              name="email"
+              placeholder="Email" 
+              value={formData.email}
+              onChange={handleFormInputChange}
+              className="w-full border border-gray-300 p-2" 
+              required 
+            />
           </div>
 
           <div>
             <label className="block text-sm mb-2 font-medium">City</label>
-            <input type="text" placeholder="City" className="w-full border border-gray-300 p-2" required />
+            <input 
+              type="text" 
+              name="city"
+              placeholder="City" 
+              value={formData.city}
+              onChange={handleFormInputChange}
+              className="w-full border border-gray-300 p-2" 
+              required 
+            />
           </div>
 
           <div>
             <label className="block text-sm mb-2 font-medium">Message</label>
-            <textarea placeholder="Message" rows={4} className="w-full border border-gray-300 p-2"></textarea>
+            <textarea 
+              name="message"
+              placeholder="Message" 
+              rows={4} 
+              value={formData.message}
+              onChange={handleFormInputChange}
+              className="w-full border border-gray-300 p-2">
+            </textarea>
           </div>
 
           <button
             type="submit"
-            className="w-full bg-[rgb(206,32,39,255)] text-white font-semibold py-2 hover:bg-red-800 transition"
+            disabled={isSubmitting}
+            className={`w-full font-semibold py-2 transition ${
+              isSubmitting 
+                ? 'bg-gray-400 cursor-not-allowed text-gray-600' 
+                : 'bg-[rgb(206,32,39,255)] text-white hover:bg-red-800'
+            }`}
           >
-            SUBMIT
+            {isSubmitting ? 'SUBMITTING...' : 'SUBMIT'}
           </button>
         </form>
       </div>
@@ -225,7 +347,7 @@ const Jeddah = () => {
                 onClick={(e) => {
                   e.stopPropagation(); // Prevent parent click (prevents navigating)
                   localStorage.setItem('selectedAgent', JSON.stringify(agent));
-                  window.location.href = '/jeddahagentdetails';
+               
                 }}
                 className="cursor-pointer"
               >
@@ -252,7 +374,7 @@ const Jeddah = () => {
                 <h3 className="text-lg sm:text-lg md:text-2xl font-semibold tracking-[0.1em] uppercase md:mb-2">{agent.name}</h3>
                 {/* <p className="text-sm text-gray-500 ml-auto">{agent.city}</p> */}
               </div>
-              <p className="md:text-sm text-[0.7rem] text-[rgb(206,32,39,255)]  mb-2 md:mb-2 break-all">Head of operations</p>
+              <p className="md:text-sm text-[0.7rem] text-[rgb(206,32,39,255)]  mb-2 md:mb-2 break-all">{agent.jobTitle}</p>
               <div className="mt-6 space-y-2">
   <p className="flex items-center gap-2 md:text-base text-sm mb-2 md:mb-2 break-all">
     <FaPhoneAlt className="text-gray-600" />

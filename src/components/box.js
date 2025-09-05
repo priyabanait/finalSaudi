@@ -18,9 +18,10 @@ const Box = ({ src, image, h3 }) => {
             priority
           />
         </div>
+        <div className="absolute inset-0 bg-black/25"></div>
 
         {/* Content Box */}
-        <div className="relative z-10 flex items-center justify-center h-[76vh] md:h-[76vh] px-4 md:px-10">
+        <div className="relative z-10 flex items-center justify-center h-[76vh] md:h-[78vh] px-4 md:px-10">
           
           {/* Mobile View */}
           <div className="w-full md:hidden flex items-center justify-center">

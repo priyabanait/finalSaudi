@@ -690,15 +690,15 @@ const AgentProfile = (props) => {
       </div>
       </div>
       </div>
-      <div className="w-full px-6 md:px-12 lg:px-20 py-12">
-      {/* Heading */}
+      {/* <div className="w-full px-6 md:px-12 lg:px-20 py-12">
+    
       <h2 className="text-center text-xl md:text-3xl font-semibold mb-10">
         My customer reviews
       </h2>
 
-      {/* Grid */}
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Review Card 1 */}
+      
         <div className=" rounded-xl shadow-md p-4 md:p-20 border border-gray-200 flex flex-col items-center text-center bg-white">
           <FaQuoteLeft className="text-gray-300 text-4xl border-1 rounded-full p-1 bg-white shadow-md mb-4" />
           <p className="text-gray-700 text-base md:text-lg  leading-relaxed">
@@ -709,7 +709,7 @@ const AgentProfile = (props) => {
           </p>
         </div>
 
-        {/* Review Card 2 */}
+       
         <div className=" rounded-xl shadow-md p-4 md:p-20 text-lg border border-gray-200 flex flex-col items-center text-center bg-white">
         <FaQuoteLeft className="text-gray-300 text-4xl border-1 rounded-full p-1 bg-white shadow-md mb-4" />
           <p className="text-gray-700 text-base md:text-lg leading-relaxed">
@@ -720,7 +720,7 @@ const AgentProfile = (props) => {
           </p>
         </div>
       </div>
-    </div>
+    </div> */}
 
     <p className="flex justify-center items-center text-2xl font-semibold mb-10 md:mb-12">
   Properties from {agent.name || agent.fullName || '-'}

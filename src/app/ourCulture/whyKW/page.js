@@ -1,10 +1,30 @@
 'use client';
-import React from 'react';
+import React,{useState,useEffect} from 'react';
 import Header from '@/components/header';
 import Footer from '@/components/newfooter';
 import Box from '@/components/box';
 import Image from 'next/image';
 const WhyKW = () => {
+  const [heroSrc, setHeroSrc] = useState('/'); 
+  const [page, setPage] = useState('');
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/api/page/slug/why-kw');
+        if (!res.ok) return;
+        console.log(res);
+        
+        const page = await res.json();
+        setPage(page)
+        if (page?.backgroundImage) {
+          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        }
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
   const sections = [
     {
       number: '01',
@@ -85,8 +105,8 @@ By partnering with KW, you gain access to our state-of-the-art technology, empow
     <div className="">
       <Header />
       <Box
-        src="/why_kw_page.jpeg"
-        h3="Why KW"
+        src={heroSrc}
+        h3={page.backgroundOverlayContent}
         image="https://static.wixstatic.com/media/36a881_a82aacde83a9442dae07d99a846cadf4~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/8-removebg-preview%20(1).png"
       />
 
