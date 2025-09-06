@@ -32,7 +32,7 @@ export default function NewsDetailPage() {
 
         // Fetch fresh data from API
         console.log('Fetching news with ID:', id);
-        const res = await fetch(`http://localhost:5000/api/News/${id}`);
+        const res = await fetch(`https://kwsaudi.x-360.ai/api/News/${id}`);
         
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);

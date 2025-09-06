@@ -12,7 +12,7 @@ export default function Training() {
   useEffect(() => {
     const fetchPageHero = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/page/slug/kw-training');
+        const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/kw-training');
         if (!res.ok) return;
         const page = await res.json();
         if (page?.backgroundImage) {

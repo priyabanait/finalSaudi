@@ -10,7 +10,7 @@ const WhyKW = () => {
   useEffect(() => {
     const fetchPageHero = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/page/slug/why-kw');
+        const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/why-kw');
         if (!res.ok) return;
         console.log(res);
         

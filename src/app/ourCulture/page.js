@@ -1,5 +1,5 @@
 'use client'
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import Header from '@/components/header';
 import Box from '@/components/box';
 import Footer from '@/components/footer';
@@ -19,6 +19,7 @@ import { FaShieldAlt } from 'react-icons/fa';
 
 const OurCulture = () => {
   const router=useRouter();
+  const [page, setPage] = useState(null);
   const cards = [
     {
       icon: <FaArrowUpRightFromSquare className="text-3xl mb-4" />,
@@ -60,6 +61,21 @@ SUCCESS: RESULTS THROUGH PEOPLE`
     },
   ];
   
+  useEffect(() => {
+    const fetchPageHero = async () => {
+      try {
+        const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/our-culture');
+        if (!res.ok) return;
+        console.log(res);
+        
+        const pageData = await res.json();
+        setPage(pageData);
+      } catch (e) {
+        console.error('Error fetching page hero:', e);
+      }
+    };
+    fetchPageHero();
+  }, []);
 
   return (
     <div className="relative">
@@ -185,7 +201,7 @@ SUCCESS: RESULTS THROUGH PEOPLE`
           </div>
         </div>
       </main>
-      <CeoTeam></CeoTeam>
+      <CeoTeam page={page}></CeoTeam>
 <Howwill></Howwill>
        <hr className=" hidden md:block w-8/12 md:w-6/12 mx-auto bg-[rgb(206,32,39,255)] border-0 h-[1.5px] mt-10 md:mt-20 mb-10" />
       <Footer />

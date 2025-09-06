@@ -170,7 +170,7 @@ const Header = () => {
         <div className="hidden md:flex flex-shrink-0 items-center h-[63.5px]">
           <Link href="/" className="block h-full">
             <Image
-              src="/headerlogo.png"
+              src={language === 'ar' ? "/logoarebic.png" : "/headerlogo.png"}
               alt="KW Saudi Arabia Logo"
               width={279}
               height={64}

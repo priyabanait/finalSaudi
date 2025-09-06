@@ -35,8 +35,10 @@ import Image from 'next/image';
 import { FaPhoneAlt,FaEnvelope } from "react-icons/fa";
 import { MdEmail } from "react-icons/md";
 import api from '@/utils/api';
+import { useTranslation } from '@/contexts/TranslationContext';
 
 const Jeddah = () => {
+    const { language } = useTranslation();
 
     const [form, setForm] = useState({
       firstName: '',
@@ -127,7 +129,7 @@ const Jeddah = () => {
     useEffect(() => {
       const fetchAgents = async () => {
         try {
-          const response = await fetch('http://localhost:5000/api/employee/team/Jeddah');
+          const response = await fetch('https://kwsaudi.x-360.ai/api/employee/team/Jeddah');
           if (!response.ok) throw new Error('Failed to fetch agents');
           const data = await response.json();
           // Map backend fields to UI fields
@@ -156,7 +158,7 @@ const Jeddah = () => {
     useEffect(() => {
       const fetchPageHero = async () => {
         try {
-          const res = await fetch('http://localhost:5000/api/page/slug/jeddah');
+          const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/jeddah');
           if (!res.ok) return;
           console.log(res);
           
@@ -387,7 +389,7 @@ const Jeddah = () => {
 </div>
 <div className="flex justify-end">
   <Image
-    src="/headerlogo.png"
+    src={language === 'ar' ? "/logoarebic.png" : "/headerlogo.png"}
     alt="Keller Williams"
     width={180}
     height={50}

@@ -73,7 +73,7 @@ const AgentContent = () => {
         if (filterCity && filterCity !== "CITY" && filterCity !== "RESET_ALL") query += `&city=${encodeURIComponent(filterCity)}`;
 
         // Use the correct API endpoint for agents
-        const response = await fetch(`https://kwbackend.jc2g.in/api/agents/merge${query}`);
+        const response = await fetch(`https://kwsaudi.x-360.ai/api/agents/merge${query}`);
         if (!response.ok) throw new Error('Failed to fetch agents');
         const data = await response.json();
 

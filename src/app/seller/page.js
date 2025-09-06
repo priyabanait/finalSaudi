@@ -72,7 +72,7 @@ Your KW Agent will guide you with a few suggestions such as  +`,
 useEffect(() => {
   const fetchPageHero = async () => {
     try {
-      const res = await fetch('http://localhost:5000/api/page/slug/five-steps-to-sell');
+      const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/five-steps-to-sell');
       if (!res.ok) return;
       console.log(res);
       

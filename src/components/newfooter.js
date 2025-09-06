@@ -4,8 +4,10 @@ import React, { useState } from "react";
 import { FaFacebookF, FaInstagram, FaLinkedinIn, FaYoutube } from "react-icons/fa";
 import { FaTiktok, FaWhatsapp, FaXTwitter } from "react-icons/fa6";
 import { FaChevronDown } from "react-icons/fa";
+import { useTranslation } from '@/contexts/TranslationContext';
 
 export default function Home() {
+  const { language } = useTranslation();
   const [open, setOpen] = useState(null);
 
   const toggleMenu = (menu) => {
@@ -32,7 +34,7 @@ export default function Home() {
   {/* Logo */}
   <div className="flex-shrink-0">
     <Image
-      src="/headerlogo.png"
+      src={language === 'ar' ? "/logoarebic.png" : "/headerlogo.png"}
       alt="Keller Williams"
       width={250}
       height={180}

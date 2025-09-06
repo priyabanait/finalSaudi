@@ -219,7 +219,7 @@ const Home = () => {
       setLoadingProperties(true);
       try {
         const res = await fetch(
-          "https://kwbackend.jc2g.in/api/listings/list/properties",
+          "https://kwsaudi.x-360.ai/api/listings/list/properties",
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },

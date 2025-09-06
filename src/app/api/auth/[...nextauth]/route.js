@@ -13,7 +13,7 @@ const handler = NextAuth({
             if (account.provider === 'google') {
                 try {
                     // Send user data to your backend
-                    const response = await fetch('http://localhost:5000/api/agent-auth/google', {
+                    const response = await fetch('https://kwsaudi.x-360.ai/api/agent-auth/google', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

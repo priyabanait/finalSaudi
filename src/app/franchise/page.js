@@ -31,7 +31,7 @@ const Franchise = () => {
   useEffect(() => {
     const fetchPageHero = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/page/slug/franchise');
+        const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/franchise');
         if (!res.ok) return;
         console.log(res);
         

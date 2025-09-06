@@ -227,6 +227,7 @@ import {
     const [properties, setProperties] = useState([]);
     const [isMobile, setIsMobile] = useState(false);
     const [totalCount, setTotalCount] = useState(0); // <-- add this for backend total count
+    const [hasNextPage, setHasNextPage] = useState(false);
     const [propertyCategory, setPropertyCategory] = useState('All');
     const [propertySubtype, setPropertySubtype] = useState('All');
     const [marketCenter, setMarketCenter] = useState('All');
@@ -354,45 +355,66 @@ import {
           };
           const apiMarketCenter = marketCenterMap[marketCenter] || undefined;
 
-          // Build filters object based on typeParam and searchTerm
-          let filters = {
-            market_center: apiMarketCenter,
-            property_subtype: propertySubtype === 'All' ? undefined : propertySubtype,
-            min_price: minPrice,
-            max_price: maxPrice,
+          // Build request body similar to buyer page
+          let requestBody = {
             page: currentPage,
-            limit: propertiesPerPage,
+            limit: propertiesPerPage
           };
 
-          // Map typeParam to correct backend field
-          if (typeParam === 'residential' || typeParam === 'commercial') {
-            filters.prop_type = typeParam.charAt(0).toUpperCase() + typeParam.slice(1);
-          } else if (typeParam === 'sale' || typeParam === 'rent') {
-            filters.list_category = typeParam.charAt(0).toUpperCase() + typeParam.slice(1);
-          } else if (typeParam && typeParam !== 'All') {
-            filters.property_category = typeParam;
+          // Add forsale/forrent parameters based on typeParam
+          if (typeParam === 'sale') {
+            requestBody.forsale = true;
+          } else if (typeParam === 'rent') {
+            requestBody.forrent = true;
           }
 
-          // Map searchTerm to correct backend field
-          if (searchTerm) {
-            if (["residential", "commercial"].includes(searchTerm.toLowerCase())) {
-              filters.prop_type = searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1);
-            } else if (["sale", "rent"].includes(searchTerm.toLowerCase())) {
-              filters.list_category = searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1);
-            } else {
-              filters.location = searchTerm;
+          // Add property_type parameter if commercial is selected
+          if (typeParam === 'commercial') {
+            requestBody.property_type = 'Commercial';
+          }
+
+          // Add other filters if they are not 'All'
+          if (apiMarketCenter) {
+            requestBody.market_center = apiMarketCenter;
+          }
+          if (propertySubtype !== 'All') {
+            requestBody.property_subtype = propertySubtype;
+          }
+          if (minPrice !== undefined) {
+            requestBody.min_price = minPrice;
+          }
+          if (maxPrice !== undefined) {
+            requestBody.max_price = maxPrice;
+          }
+          if (location !== 'All') {
+            requestBody.location = location;
+          }
+
+          const response = await axios.post('https://kwsaudi.x-360.ai/api/listings/list/properties', requestBody);
+          
+          if (response.data.success) {
+            let fetched = [];
+            if (Array.isArray(response.data?.data)) {
+              fetched = response.data.data;
             }
-          } else if (location !== 'All') {
-            filters.location = location;
-          }
-
-          const response = await axios.post('https://kw-backend-q6ej.vercel.app/api/listings/list/properties', filters);
-          if (currentPage === 1) {
-            setProperties(response.data.data);
+            
+            if (currentPage === 1) {
+              setProperties(fetched);
+            } else {
+              setProperties(prev => [...prev, ...fetched]);
+            }
+            setTotalCount(response.data.total || 0);
+            
+            // Set pagination state
+            if (response.data.pagination) {
+              setHasNextPage(response.data.pagination.has_next_page || false);
+            } else {
+              // Fallback: check if we have more properties than currently loaded
+              setHasNextPage(fetched.length === propertiesPerPage);
+            }
           } else {
-            setProperties(prev => [...prev, ...response.data.data]);
+            console.error('API Error:', response.data.message || 'Failed to load properties');
           }
-          setTotalCount(response.data.total || 0);
         } catch (error) {
           console.error('POST request error:', error);
         } finally {
@@ -901,7 +923,7 @@ import {
                   <p className="text-gray-500 text-lg font-medium">No properties found</p>
                 </div>
               )}
-              {!loading && properties.length > 0 && properties.length < totalCount && (
+              {!loading && properties.length > 0 && hasNextPage && (
                 <div className="col-span-full flex justify-center items-center mt-6">
                   <button
                     onClick={() => {
@@ -917,7 +939,7 @@ import {
                   </button>
                 </div>
               )}
-              {!loading && properties.length > 0 && properties.length >= totalCount && totalCount > 0 && (
+              {!loading && properties.length > 0 && !hasNextPage && totalCount > 0 && (
                 <div className="col-span-full flex justify-center items-center mt-6">
                   <p className="text-gray-500 text-sm font-medium">All properties have been loaded</p>
                 </div>
@@ -1090,7 +1112,7 @@ import {
             <p className="text-gray-500 text-lg font-medium">No properties found</p>
           </div>
         )}
-        {!loading && properties.length > 0 && properties.length < totalCount && (
+        {!loading && properties.length > 0 && hasNextPage && (
           <div className="col-span-full flex justify-center items-center mt-6">
             <button
               onClick={() => {
@@ -1106,7 +1128,7 @@ import {
             </button>
           </div>
         )}
-        {!loading && properties.length > 0 && properties.length >= totalCount && totalCount > 0 && (
+        {!loading && properties.length > 0 && !hasNextPage && totalCount > 0 && (
           <div className="col-span-full flex justify-center items-center mt-6">
             <p className="text-gray-500 text-sm font-medium">All properties have been loaded</p>
           </div>

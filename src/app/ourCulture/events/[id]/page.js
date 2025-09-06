@@ -32,7 +32,7 @@ export default function EventDetailPage() {
 
         // Fetch fresh data from API
         console.log('Fetching event with ID:', id);
-        const res = await fetch(`http://localhost:5000/api/event/${id}`);
+        const res = await fetch(`https://kwsaudi.x-360.ai/api/event/${id}`);
         
         console.log('Response status:', res.status);
         console.log('Response headers:', res.headers);

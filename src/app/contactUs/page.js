@@ -21,7 +21,7 @@ const Contact = () => {
   useEffect(() => {
     const fetchPageHero = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/page/slug/contact-us');
+        const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/contact-us');
         if (!res.ok) return;
        
         

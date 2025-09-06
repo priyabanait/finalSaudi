@@ -19,7 +19,7 @@ export default function Page(){
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch('http://localhost:5000/api/events');
+        const res = await fetch('https://kwsaudi.x-360.ai/api/events');
         
         if (!res.ok) {
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -43,7 +43,7 @@ export default function Page(){
   useEffect(() => {
     const fetchPageHero = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/page/slug/events');
+        const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/events');
         if (!res.ok) return;
         const page = await res.json();
         if (page?.backgroundImage) {

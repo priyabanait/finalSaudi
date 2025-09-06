@@ -36,7 +36,7 @@ export default function Aboutus() {
   useEffect(() => {
     const fetchPageHero = async () => {
       try {
-        const res = await fetch('http://localhost:5000/api/page/slug/about-us');
+        const res = await fetch('https://kwsaudi.x-360.ai/api/page/slug/about-us');
         if (!res.ok) return;
         console.log(res);
         
@@ -149,7 +149,7 @@ export default function Aboutus() {
 </div>
 
       </div>
-<CeoTeam></CeoTeam>
+<CeoTeam page={page}></CeoTeam>
 <Howwill></Howwill>
       <Footer />
     </div>

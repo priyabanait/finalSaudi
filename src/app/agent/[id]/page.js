@@ -222,7 +222,7 @@ const AgentProfile = (props) => {
         }
         
         // If no stored data or no match, fetch from API
-        const agentRes = await fetch(`https://kwbackend.jc2g.in/api/agents/merge?name=&page=1&limit=100`);
+        const agentRes = await fetch(`https://kwsaudi.x-360.ai/api/agents/merge?name=&page=1&limit=100`);
         
         if (agentRes.ok) {
           const agentData = await agentRes.json();
@@ -290,7 +290,7 @@ const AgentProfile = (props) => {
         console.log('Agent kw_id:', agent.kw_id || agent.kwId);
         
         // First try the main properties API endpoint
-        let res = await fetch('https://kwbackend.jc2g.in/api/properties', {
+        let res = await fetch('https://kwsaudi.x-360.ai/api/properties', {
           method: 'POST',
           headers: { 
             'Content-Type': 'application/json',

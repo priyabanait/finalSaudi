@@ -56,4 +56,29 @@ api.interceptors.response.use(
   }
 );
 
+// Employee API functions
+export const employeeAPI = {
+  // Get employees by team
+  getEmployeesByTeam: async (team) => {
+    try {
+      const response = await api.get(`/employee/team/${encodeURIComponent(team)}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching employees by team:', error);
+      throw error;
+    }
+  },
+
+  // Get all employees
+  getAllEmployees: async () => {
+    try {
+      const response = await api.get('/employee');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching all employees:', error);
+      throw error;
+    }
+  }
+};
+
 export default api;
