@@ -22,19 +22,22 @@ export const TranslationProvider = ({ children }) => {
 
     // Load saved language preference from localStorage
     useEffect(() => {
-        const savedLanguage = localStorage.getItem('preferred-language');
-        if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ar')) {
-            setLanguage(savedLanguage);
+        if (typeof window !== 'undefined') {
+            const savedLanguage = localStorage.getItem('preferred-language');
+            if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'ar')) {
+                setLanguage(savedLanguage);
+            }
         }
     }, []);
 
     // Save language preference and update document direction
     useEffect(() => {
-        localStorage.setItem('preferred-language', language);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('preferred-language', language);
 
-        // Update document direction and text alignment
-        const html = document.documentElement;
-        const body = document.body;
+            // Update document direction and text alignment
+            const html = document.documentElement;
+            const body = document.body;
 
         if (language === 'ar') {
             html.setAttribute('dir', 'rtl');
@@ -62,8 +65,9 @@ export const TranslationProvider = ({ children }) => {
             body.style.fontFamily = '';
         }
 
-        // Force re-render of components that depend on language
-        window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language } }));
+            // Force re-render of components that depend on language
+            window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language } }));
+        }
     }, [language]);
 
     const toggleLanguage = () => {
@@ -121,8 +125,8 @@ export const TranslationProvider = ({ children }) => {
 
     // Translate all text elements on the page safely
     const translatePage = useCallback(async () => {
-        // Skip if no translation needed
-        if (language === 'en') {
+        // Skip if no translation needed or not on client side
+        if (language === 'en' || typeof window === 'undefined') {
             restoreOriginalTexts();
             return;
         }
@@ -221,6 +225,7 @@ export const TranslationProvider = ({ children }) => {
     // Restore original texts when switching back to English
     const restoreOriginalTexts = useCallback(() => {
         try {
+            if (typeof window === 'undefined') return;
             const translatedElements = document.querySelectorAll('[data-translated]');
             translatedElements.forEach(element => {
                 const originalText = element.getAttribute('data-original-text');

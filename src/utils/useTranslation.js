@@ -114,9 +114,10 @@ export const useComponentTranslation = (initialLanguage = 'en') => {
 
     // Cleanup on unmount
     useEffect(() => {
+        const abortController = abortControllerRef.current;
         return () => {
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
+            if (abortController) {
+                abortController.abort();
             }
         };
     }, []);

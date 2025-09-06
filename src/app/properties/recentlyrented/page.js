@@ -106,7 +106,7 @@ const PropertiesContent = () => {
       }
     }
     fetchProperties();
-  }, []);
+  }, [selected.commercial]);
   
   // Preselect city from query parameter and apply filter
   const searchParams = useSearchParams();
