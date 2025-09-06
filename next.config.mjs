@@ -16,7 +16,8 @@ const nextConfig = {
       'api.dicebear.com',
       'www.kw.com','encrypted-tbn0.gstatic.com',
       "www.kw.com",
-      'avatar.kwconnect.com'
+      'avatar.kwconnect.com',
+      'kwsaudi.x-360.ai' 
     ],
   },
 };

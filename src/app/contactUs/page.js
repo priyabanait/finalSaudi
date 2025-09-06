@@ -29,7 +29,7 @@ const Contact = () => {
         console.log(page);
         setPage(page)
         if (page?.backgroundImage) {
-          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+          setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
         }
       } catch (e) {
         console.error('Error fetching page hero:', e);
@@ -84,7 +84,7 @@ const Contact = () => {
       {/* Hero Section */}
       <Header />
       <Box
-        src={heroSrc}
+        src='/active_listings_page.jpeg'
         h3={page.backgroundOverlayContent}
         image="/contactus.png"
       />

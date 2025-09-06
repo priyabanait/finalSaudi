@@ -17,10 +17,9 @@ export default function TestHeaderTranslation() {
                         <div className="p-4 bg-blue-50 rounded-lg">
                             <h2 className="text-xl font-semibold mb-2">Instructions:</h2>
                             <ol className="list-decimal list-inside space-y-1 text-gray-700">
-                                <li>Click the language dropdown in the header (top right)</li>
-                                <li>Select "عربي" to switch to Arabic</li>
-                                <li>Watch as the page content translates</li>
-                                <li>Select "English" to switch back</li>
+                            <li>Select &quot;عربي&quot; to switch to Arabic</li>
+<li>Watch as the page content translates</li>
+<li>Select &quot;English&quot; to switch back</li>
                             </ol>
                         </div>
 

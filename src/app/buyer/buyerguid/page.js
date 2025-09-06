@@ -125,7 +125,7 @@ useEffect(() => {
       const page = await res.json();
       setPage(page)
       if (page?.backgroundImage) {
-        setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
       }
     } catch (e) {
       console.error('Error fetching page hero:', e);
@@ -141,7 +141,7 @@ useEffect(() => {
       
 
         <Box
-        src={heroSrc}
+        src='/Buyer_guide_page.jpg'
           h3={page.backgroundOverlayContent}
           image="/buyer2.jpg"
         />

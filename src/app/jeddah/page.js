@@ -75,7 +75,17 @@ const Jeddah = () => {
         [name]: value
       }));
     };
-
+    const images = [
+      '/M.AWAD.png',
+      '/ABAKEER.png',
+      '/Nora Talab-1.png',
+      '/Omar Gamal.png',
+      '/Tamer.png'
+      
+      
+     
+      
+    ];
     const handleFormSubmit = async (e) => {
       e.preventDefault();
       setIsSubmitting(true);
@@ -141,7 +151,7 @@ const Jeddah = () => {
             phone: agent.phone,
             email: agent.email,
             city: agent.team,
-            image: agent.profileImage ? `http://localhost:5000/${agent.profileImage.replace(/\\/g, '/')}` : null,
+            image: agent.profileImage ? `https://kwsaudi.x-360.ai/${agent.profileImage.replace(/\\/g, '/')}` : null,
             title: agent.jobTitle || '',
             _id: agent._id,
             kw_id: ""
@@ -165,7 +175,7 @@ const Jeddah = () => {
           const page = await res.json();
           setPage(page)
           if (page?.backgroundImage) {
-            setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+            setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
           }
         } catch (e) {
           console.error('Error fetching page hero:', e);
@@ -178,7 +188,7 @@ const Jeddah = () => {
         <Header></Header>
           <Box
        h3={page.backgroundOverlayContent}
-      src={heroSrc}
+      src='/jeddhahbg.jpg'
          image={
            'https://static.wixstatic.com/media/36a881_3c5b1d5faca941ea915b39acfedf52ee~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/2-removebg-preview.png'
          }
@@ -331,43 +341,41 @@ const Jeddah = () => {
       
           {/* Right Section - Full width on mobile, 50% on desktop */}
           <div className="w-full md:w-1/2">
-      {loading && (
-        <div className="flex justify-center items-center h-60">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[rgb(206,32,39,255)] border-solid"></div>
-        </div>
-      )}
-      {error && <div className="text-red-500">{error}</div>}
-      {!loading && !error && teamMembers.length === 0 && <div>No agents found.</div>}
-      {!loading && !error && teamMembers.map((agent, idx) => (
-        <React.Fragment key={agent._id || idx}>
-          <article
-            className="p-4 md:mx-3 flex flex-row items-start gap-4 relative"
+  {loading && (
+    <div className="flex justify-center items-center h-60">
+      <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-[rgb(206,32,39,255)] border-solid"></div>
+    </div>
+  )}
+  {error && <div className="text-red-500">{error}</div>}
+  {!loading && !error && teamMembers.length === 0 && <div>No agents found.</div>}
+  {!loading && !error && teamMembers.map((agent, idx) => (
+    <React.Fragment key={agent._id || idx}>
+      <article className="p-4 md:mx-3 flex flex-row items-start gap-4 relative">
+
+        {/* Agent Image */}
+        <div className="w-32 h-32 md:w-50 md:h-50 flex-shrink-0 relative md:mx-3">
+          <div 
+            onClick={(e) => {
+              e.stopPropagation();
+              localStorage.setItem('selectedAgent', JSON.stringify(agent));
+            }}
+            className="cursor-pointer"
           >
-            {/* Agent Image */}
-            <div className="w-32 h-32 md:w-50 md:h-50 flex-shrink-0 relative md:mx-3">
-              <div 
-                onClick={(e) => {
-                  e.stopPropagation(); // Prevent parent click (prevents navigating)
-                  localStorage.setItem('selectedAgent', JSON.stringify(agent));
-               
-                }}
-                className="cursor-pointer"
-              >
-                {agent.image ? (
-                  <Image 
-                    src={agent.image}
-                    alt={`Portrait of ${agent.name}`}
-                    width={128}
-                    height={128}
-                    className="rounded-lg object-cover w-32 h-32 md:w-50 md:h-50"
-                  />
-                ) : (
-                  <div className="w-full h-full bg-gray-300 flex items-center justify-center rounded-lg">
-                    <span className="text-xs text-gray-500">No Image</span>
-                  </div>
-                )}
+            {images[idx] ? (
+              <Image 
+                src={images[idx]}
+                alt={`Portrait of ${agent.name}`}
+                width={128}
+                height={128}
+                className="rounded-lg object-cover w-32 h-32 md:w-50 md:h-50"
+              />
+            ) : (
+              <div className="w-full h-full bg-gray-300 flex items-center justify-center rounded-lg">
+                <span className="text-xs text-gray-500">No Image</span>
               </div>
-            </div>
+            )}
+          </div>
+        </div>
             {/* Vertical Divider */}
             <div className="hidden md:block w-px bg-gray-300 mx-2" />
             {/* Agent Info */}

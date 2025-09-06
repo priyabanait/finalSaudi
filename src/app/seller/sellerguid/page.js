@@ -96,7 +96,7 @@ useEffect(() => {
       const page = await res.json();
       setPage(page)
       if (page?.backgroundImage) {
-        setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+        setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
       }
     } catch (e) {
       console.error('Error fetching page hero:', e);
@@ -112,7 +112,7 @@ useEffect(() => {
       
 
         <Box
-        src={heroSrc}
+        src='/seller_guide_page.jpeg'
           h3={page.backgroundOverlayContent}
           image="https://static.wixstatic.com/media/36a881_0ed2d4fa08bb4022acbbb9e48b783092~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/4-removebg-preview.png"
         />

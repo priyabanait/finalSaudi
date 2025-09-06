@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Create axios instance with default configuration
 const api = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: 'https://kwsaudi.x-360.ai/api',
   timeout: 10000, // 10 seconds timeout
   headers: {
     'Content-Type': 'application/json',

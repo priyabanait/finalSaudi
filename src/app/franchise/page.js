@@ -38,7 +38,7 @@ const Franchise = () => {
         const page = await res.json();
         setPage(page)
         if (page?.backgroundImage) {
-          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+          setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
         }
       } catch (e) {
         console.error('Error fetching page hero:', e);
@@ -103,7 +103,7 @@ const Franchise = () => {
 
       <Box
         h3={page.backgroundOverlayContent}
-        src={heroSrc}
+        src='/become_a_franchise.jpeg'
         image={
           'https://static.wixstatic.com/media/36a881_d93a5085a707440e9b7a3346a80846a1~mv2.png/v1/fill/w_271,h_180,al_c,q_85,usm_0.66_1.00_0.01,enc_avif,quality_auto/7-removebg-preview.png'
         }

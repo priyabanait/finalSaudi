@@ -132,7 +132,7 @@ export default function EventDetailPage() {
   <Image
     src={
       blog.coverImage
-        ? `http://localhost:5000/${blog.coverImage.replace(/\\/g, "/")}`
+        ? `https://kwsaudi.x-360.ai/${blog.coverImage.replace(/\\/g, "/")}`
         : "/event.png"
     }
     alt={blog.title}

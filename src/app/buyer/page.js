@@ -592,7 +592,7 @@ const PropertiesContent = () => {
         console.log(page);
         setPage(page)
         if (page?.backgroundImage) {
-          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+          setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
         }
       } catch (e) {
         console.error('Error fetching page hero:', e);
@@ -618,7 +618,7 @@ const PropertiesContent = () => {
     <section className={`relative w-full ${showFilters ? 'h-[120vh] md:h-[125vh]' : 'h-screen md:h-screen'} text-white overflow-hidden transition-all duration-500 ease-in-out`}>
       {/* Background Image with previous blurring out and next coming in */}
       <Image
-              src={heroSrc}
+              src='/1.jpg'
               alt="Previous Hero Background"
               layout="fill"
               

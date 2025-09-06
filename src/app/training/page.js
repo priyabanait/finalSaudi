@@ -16,7 +16,7 @@ export default function Training() {
         if (!res.ok) return;
         const page = await res.json();
         if (page?.backgroundImage) {
-          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+          setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
         }
       } catch (e) {
         console.error('Error fetching page hero:', e);
@@ -29,7 +29,7 @@ export default function Training() {
       <Header />
       <Box
         h3={"KW Training"}
-        src={heroSrc}
+        src='/why_kw_page.jpeg'
         image={
           '/ourculture2.jpg'
         }

@@ -18,7 +18,7 @@ const Joinus = (props) => {
         const page = await res.json();
         setPage(page)
         if (page?.backgroundImage) {
-          setHeroSrc(`http://localhost:5000/${page.backgroundImage}`);
+          setHeroSrc(`https://kwsaudi.x-360.ai/${page.backgroundImage}`);
         }
       } catch (e) {
         console.error('Error fetching page hero:', e);
@@ -33,7 +33,7 @@ const Joinus = (props) => {
 
       <Box
        
-        src={heroSrc}
+        src='/kw_technology_page.jpeg'
         h3={page.backgroundOverlayContent}
         image={
           '/joinus.png'

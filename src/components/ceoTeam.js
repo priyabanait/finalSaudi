@@ -9,7 +9,30 @@ const TeamComponent = ({ page }) => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-
+  const images = [
+    '/M.AWAD.png',
+    '/Sarah Said.png',
+    '/Abdullah Bakeer.png',
+    '/Khalid Yaseen Baig.png',
+    '/Rawan Rahhal.png',
+    '/Areej Al Rashed.png',
+    '/Essa Aljuwaied.png',
+    '/Zeeshan Saif.png',
+    '/Abdulaziz.png',
+   
+    '/Amro Nada.png',
+   
+    
+    '/Hamdan Alkatheeri.png',
+    
+   
+    
+   
+    
+    
+  ];
+  
+  
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
@@ -33,6 +56,7 @@ const TeamComponent = ({ page }) => {
 
     fetchTeamMembers();
   }, []);
+  
 
   return (
     <div>
@@ -40,7 +64,7 @@ const TeamComponent = ({ page }) => {
         <div className="flex flex-col md:flex-row md:px-20 items-start">
           <div className="md:w-140 h-[40vh] w-full md:h-full items-start">
             <Image
-              src={page?.backgroundImage ? `http://localhost:5000/${page.backgroundImage}` : '/ceoimage.png'}
+              src='/ceoimage.png'
               alt="CEO"
               width={800}
               height={500}
@@ -101,24 +125,26 @@ const TeamComponent = ({ page }) => {
               </div>
             ) : (
               teamMembers.map((member, index) => (
-                <div key={member._id || index}>
-                  <div className="flex flex-row gap-3 md:gap-6 p-6 md:p-6 items-start">
-                    <div className="flex-shrink-0 w-32 h-32 sm:w-32 sm:h-32 md:w-60 md:h-60">
-                      <Image
-                        src={member.profileImage ? `http://localhost:5000/${member.profileImage}` : '/placeholder-avatar.png'}
-                        alt={member.name}
-                        width={160}
-                        height={160}
-                        className="rounded-xl object-cover w-32 h-32 sm:w-32 sm:h-32 md:w-60 md:h-60"
-                      />
-                    </div>
+  <div key={member._id || index}>
+    <div className="flex flex-row gap-3 md:gap-6 p-6 md:p-6 items-start">
+      
+      <div className="flex-shrink-0 w-32 h-32 sm:w-32 sm:h-32 md:w-60 md:h-60">
+        <Image
+          src={images[index] || '/placeholder-avatar.png'}
+          alt={member.name}
+          width={160}
+          height={160}
+          className="rounded-xl object-cover w-32 h-32 sm:w-32 sm:h-32 md:w-60 md:h-60"
+        />
+      </div>
 
-                    <div className="flex-1">
-                      <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4">
-                        <h3 className="text-lg sm:text-lg md:text-2xl font-semibold tracking-[0.1em] uppercase md:mb-2">
-                          {member.name}
-                        </h3>
-                      </div>
+      <div className="flex-1">
+        <div className="flex flex-col sm:flex-row sm:items-baseline gap-2 sm:gap-4">
+          <h3 className="text-lg sm:text-lg md:text-2xl font-semibold tracking-[0.1em] uppercase md:mb-2">
+            {member.name}
+          </h3>
+        </div>
+      
                       <p className="md:text-sm text-[0.7rem] text-[rgb(206,32,39,255)] mb-2 md:mb-2 break-all">
                         {member.jobTitle || member.title || 'Team Member'}
                       </p>
