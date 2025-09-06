@@ -289,6 +289,126 @@ export const syncAgentsFromMultipleKWPeople = async (req, res) => {
     });
   }
 };
+
+// Get filtered agents with pagination
+export const getFilteredAgents = async (req, res) => {
+  try {
+    const { name, marketCenter, city, page = 1, limit = 10 } = req.query;
+    const filter = { isAgent: true }; // Only return actual agents, not form submissions
+
+    if (name) {
+      filter.fullName = { $regex: name, $options: 'i' };
+    }
+    if (marketCenter && marketCenter !== "MARKET CENTER") {
+      filter.marketCenter = { $regex: `^${marketCenter}$`, $options: 'i' };
+    }
+    if (city && city !== "CITY" && city !== "RESET_ALL") {
+      filter.city = { $regex: `^${city}$`, $options: 'i' };
+    }
+
+    console.log('Agent filter:', filter); // Debug log
+
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    const total = await Agent.countDocuments(filter);
+    const agents = await Agent.find(filter)
+      .skip(skip)
+      .limit(parseInt(limit));
+
+    res.json({
+      success: true,
+      total,
+      page: parseInt(page),
+      count: agents.length,
+      data: agents,
+    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Get leads data from agents for the frontend
+export const getLeadsFromAgents = async (req, res) => {
+  try {
+    console.log('getLeadsFromAgents called');
+    
+    // Get all agents and form submissions from database
+    const allData = await Agent.find({}).sort({ createdAt: -1 });
+    console.log(`Found ${allData.length} total records`);
+    
+    // Transform data into leads format with error handling
+    const leads = allData.map(item => {
+      try {
+        if (item.isAgent) {
+          // This is an agent
+          let formType = ''; // default
+          
+          if (item.marketCenter && item.marketCenter.includes('Jasmin')) {
+            formType = 'jasmin';
+          } else if (item.marketCenter && item.marketCenter.includes('Jeddah')) {
+            formType = 'jeddah';
+          } 
+          
+          return {
+            _id: item._id,
+            fullName: item.fullName || '',
+            email: item.email || '',
+            mobileNumber: item.phone || '',
+            city: item.city || '',
+            formType: formType,
+            message: `Agent from ${item.marketCenter || 'KW Saudi Arabia'}`,
+            createdAt: item.createdAt,
+            isAgent: true
+          };
+        } else {
+          // This is a form submission
+          return {
+            _id: item._id,
+            formType: item.formType || '',
+            createdAt: item.createdAt,
+            isAgent: false,
+            // Include form-specific fields with null checks
+            ...(item.fullName && { fullName: item.fullName }),
+            ...(item.fullname && { fullname: item.fullname }),
+            ...(item.email && { email: item.email }),
+            ...(item.mobileNumber && { mobileNumber: item.mobileNumber }),
+            ...(item.city && { city: item.city }),
+            ...(item.message && { message: item.message }),
+            ...(item.address && { address: item.address }),
+            ...(item.bedrooms && { bedrooms: item.bedrooms }),
+            ...(item.property_type && { property_type: item.property_type }),
+            ...(item.valuation_type && { valuation_type: item.valuation_type }),
+            ...(item.dob && { dob: item.dob }),
+            ...(item.educationStatus && { educationStatus: item.educationStatus }),
+            ...(item.promotionalConsent !== undefined && { promotionalConsent: item.promotionalConsent }),
+            ...(item.personalDataConsent !== undefined && { personalDataConsent: item.personalDataConsent }),
+            ...(item.enquiryType && { enquiryType: item.enquiryType })
+          };
+        }
+      } catch (itemError) {
+        console.error('Error processing item:', item._id, itemError);
+        // Return a minimal safe object for this item
+        return {
+          _id: item._id,
+          formType: 'unknown',
+          createdAt: item.createdAt || new Date(),
+          isAgent: false,
+          error: 'Failed to process this record'
+        };
+      }
+    });
+    
+    console.log(`Transformed ${leads.length} records to leads`);
+    
+    res.json(leads);
+  } catch (err) {
+    console.error('Error fetching leads from agents:', err);
+    res.status(500).json({ 
+      error: 'Failed to fetch leads',
+      message: err.message 
+    });
+  }
+};
+
 export const fetchPropertiesWithAgents = async (req, res) => {
   try {
     // 1. Input: org_id, single agent and pagination
@@ -579,127 +699,6 @@ export const fetchPropertiesWithAgents = async (req, res) => {
     });
   }
 };
-
-// Get filtered agents with pagination
-export const getFilteredAgents = async (req, res) => {
-  try {
-    const { name, marketCenter, city, page = 1, limit = 10 } = req.query;
-    const filter = {};
-
-    if (name) {
-      filter.fullName = { $regex: name, $options: 'i' };
-    }
-    if (marketCenter && marketCenter !== "MARKET CENTER") {
-      filter.marketCenter = { $regex: `^${marketCenter}$`, $options: 'i' };
-    }
-    if (city && city !== "CITY" && city !== "RESET_ALL") {
-      filter.city = { $regex: `^${city}$`, $options: 'i' };
-    }
-
-    console.log('Agent filter:', filter); // Debug log
-
-    const skip = (parseInt(page) - 1) * parseInt(limit);
-    const total = await Agent.countDocuments(filter);
-    const agents = await Agent.find(filter)
-      .skip(skip)
-      .limit(parseInt(limit));
-
-    res.json({
-      success: true,
-      total,
-      page: parseInt(page),
-      count: agents.length,
-      data: agents,
-    });
-  } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
-};
-
-// Get leads data from agents for the frontend
-export const getLeadsFromAgents = async (req, res) => {
-  try {
-    console.log('getLeadsFromAgents called');
-    
-    // Get all agents and form submissions from database
-    const allData = await Agent.find({}).sort({ createdAt: -1 });
-    console.log(`Found ${allData.length} total records`);
-    
-    // Transform data into leads format with error handling
-    const leads = allData.map(item => {
-      try {
-        if (item.isAgent) {
-          // This is an agent
-          let formType = ''; // default
-          
-          if (item.marketCenter && item.marketCenter.includes('Jasmin')) {
-            formType = 'jasmin';
-          } else if (item.marketCenter && item.marketCenter.includes('Jeddah')) {
-            formType = 'jeddah';
-          } 
-          
-          return {
-            _id: item._id,
-            fullName: item.fullName || '',
-            email: item.email || '',
-            mobileNumber: item.phone || '',
-            city: item.city || '',
-            formType: formType,
-            message: `Agent from ${item.marketCenter || 'KW Saudi Arabia'}`,
-            createdAt: item.createdAt,
-            isAgent: true
-          };
-        } else {
-          // This is a form submission
-          return {
-            _id: item._id,
-            formType: item.formType || '',
-            createdAt: item.createdAt,
-            isAgent: false,
-            // Include form-specific fields with null checks
-            ...(item.fullName && { fullName: item.fullName }),
-            ...(item.fullname && { fullname: item.fullname }),
-            ...(item.email && { email: item.email }),
-            ...(item.mobileNumber && { mobileNumber: item.mobileNumber }),
-            ...(item.city && { city: item.city }),
-            ...(item.message && { message: item.message }),
-            ...(item.address && { address: item.address }),
-            ...(item.bedrooms && { bedrooms: item.bedrooms }),
-            ...(item.property_type && { property_type: item.property_type }),
-            ...(item.valuation_type && { valuation_type: item.valuation_type }),
-            ...(item.dob && { dob: item.dob }),
-            ...(item.educationStatus && { educationStatus: item.educationStatus }),
-            ...(item.promotionalConsent !== undefined && { promotionalConsent: item.promotionalConsent }),
-            ...(item.personalDataConsent !== undefined && { personalDataConsent: item.personalDataConsent }),
-            ...(item.enquiryType && { enquiryType: item.enquiryType })
-          };
-        }
-      } catch (itemError) {
-        console.error('Error processing item:', item._id, itemError);
-        // Return a minimal safe object for this item
-        return {
-          _id: item._id,
-          formType: 'unknown',
-          createdAt: item.createdAt || new Date(),
-          isAgent: false,
-          error: 'Failed to process this record'
-        };
-      }
-    });
-    
-    console.log(`Transformed ${leads.length} records to leads`);
-    
-    res.json(leads);
-  } catch (err) {
-    console.error('Error fetching leads from agents:', err);
-    res.status(500).json({ 
-      error: 'Failed to fetch leads',
-      message: err.message 
-    });
-  }
-};
-
-
 // export const getLeadsFromAgents = async (req, res) => {
 //   try {
 //     console.log('getLeadsFromAgents called');

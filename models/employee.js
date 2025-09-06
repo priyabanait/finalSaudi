@@ -22,7 +22,7 @@ const employeeSchema = new mongoose.Schema({
   email: { type: String },
   phone: { type: String },
   profileImage: { type: String }, // store uploaded image path
-  team: { type: String, enum: ["Jeddah", "Jasmin"], required: true }
+  team: { type: String, enum: ["Jeddah", "Jasmin", "Regional Team"], required: true }
 }, { timestamps: true });
 
 export default mongoose.model("Employee", employeeSchema);
