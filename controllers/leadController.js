@@ -180,11 +180,7 @@ export const createLead = async (req, res) => {
       .replace(/\s+/g, '-')
       .replace(/[^a-z0-9-]/g, '');
 
-    // Check duplicates (based on email + formType)
-    const existing = await Lead.findOne({ email: data.email, formType: data.formType });
-    if (existing) {
-      return res.status(400).json({ success: false, message: 'Lead already exists' });
-    }
+    // Duplicate check removed: allow multiple leads with same email and formType
 
     // Only jasmin/jeddah should use agents DB to set marketCenter
     if (data.formType === 'jasmin' || data.formType === 'jeddah') {
