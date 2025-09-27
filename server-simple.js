@@ -5,9 +5,9 @@ import jwt from 'jsonwebtoken';
 
 const app = express();
 
-// Configure CORS
+// Configure CORS to allow requests from any origin (for dev/testing)
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+  origin: true, // Reflects the request origin, effectively allowing all
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -221,7 +221,5 @@ app.get('/api/auth/profile', (req, res) => {
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Test endpoint: http://localhost:${PORT}/api/test`);
-  console.log(`Register endpoint: http://localhost:${PORT}/api/auth/register`);
-  console.log(`Login endpoint: http://localhost:${PORT}/api/auth/login`);
+  // Endpoints are now deployed on https://kwlast.vercel.app
 });

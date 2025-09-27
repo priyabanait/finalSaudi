@@ -31,9 +31,9 @@ dotenv.config({ path: path.join(__dirname, 'config', 'config.env') });
 
 const app = express();
 
-// Configure CORS to allow requests from frontend
+// Configure CORS to allow requests from any origin (for dev/testing)
 app.use(cors({
-  origin: ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:3004'],
+  origin: true, // Reflects the request origin, effectively allowing all
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma']
@@ -124,8 +124,9 @@ app.use('*', (req, res) => {
 
 // Start server even if MongoDB is not available (for testing)
 const startServer = () => {
-  app.listen(process.env.PORT || 5000, () => {
-    console.log(`Server running on port ${process.env.PORT || 5000}`);
+  const port = process.env.PORT || 5000;
+  app.listen(port, () => {
+    console.log(`Server running on port ${port}`);
   });
 };
 

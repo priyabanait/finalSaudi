@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const BASE_URL = 'https://kw-saudi.onrender.com//api';
+const BASE_URL = 'https://kwlast.vercel.app/api';
 
 // Test registration
 async function testRegistration() {

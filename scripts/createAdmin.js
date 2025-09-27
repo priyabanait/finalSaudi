@@ -6,7 +6,7 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 dotenv.config();
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/yourdbname';
+const MONGO_URI = process.env.MONGO_URI || process.env.MONGO_URI_PROD || '';
 
 async function createAdmin() {
   await mongoose.connect(MONGO_URI);
