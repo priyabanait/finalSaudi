@@ -12,14 +12,20 @@ const agentSchema = new mongoose.Schema({
     type: String,
     validate: {
       validator: function (value) {
-        // require email for some forms, but not instant-valuation
         if (this.formType === 'instant-valuation') {
-          return true; // skip validation
+          return true;
         }
-        return value && value.length > 0; // must exist otherwise
+        return value && value.length > 0;
       },
       message: 'Email is required for this form type'
     }
+  },
+  kw_email: {
+    type: String,
+    index: true,
+    lowercase: true,
+    trim: true,
+    default: ''
   },
     phone: { type: String },
   profileImage: { type: String },

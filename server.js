@@ -10,26 +10,33 @@ import cors from 'cors';
 
 import seoRoutes from './routes/seoRoutes.js';
 import pageRoutes from './routes/pageRoutes.js';
+import homepageRoutes from './routes/homepageRoute.js';
 // import themeRoutes from './routes/themeRoutes.js';
 import blogRoutes from './routes/blogRoutes.js';
 import newsRoutes from './routes/newsRoutes.js';
 import eventRoutes from './routes/eventRoutes.js';
 import listingRoutes from './routes/listingRoutes.js'
 import agentRoutes from './routes/agentRoutes.js';
+import agentLinkRoutes from './routes/agentLinkRoutes.js';
 import authRoutes from './routes/authRoutes.js';
 import employeeRoutes from './routes/employeeRoutes.js';
+import pdfRoutes from './routes/pdfRoutes.js';
 // import userRoutes from './routes/userRoutes.js';
-
+import cookieParser from 'cookie-parser';
+import leadRoutes from './routes/leadRoutes.js'
+import translationRoutes from './routes/translationRoutes.js';
+import emailRoutes from './routes/emailRoutes.js';
+import apiManagementRoutes from './routes/apiManagement.js';
 dotenv.config({ path: path.join(__dirname, 'config', 'config.env') });
 
 const app = express();
 
 // Configure CORS to allow requests from frontend
 app.use(cors({
-  origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'],
+  origin: ['http://localhost:3001', 'http://localhost:3000', 'http://localhost:3002', 'http://localhost:3003', 'http://localhost:3004'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  allowedHeaders: ['Content-Type', 'Authorization', 'Cache-Control', 'Pragma']
 }));
 
 // JSON parsing middleware with error handling
@@ -60,8 +67,8 @@ app.use((error, req, res, next) => {
   }
   next(error);
 });
-
-
+app.use(cookieParser());
+app.use('/api', leadRoutes);
 app.get('/',(req, res)=>{
   res.send("backend Working Fine")
 })
@@ -75,17 +82,25 @@ app.get('/api/test', (req, res) => {
   });
 });
 // Routes
-app.use('/api', authRoutes);
+app.use('/api/auth', authRoutes);
 app.use('/api', seoRoutes);
 app.use('/api', pageRoutes);
+app.use('/api', homepageRoutes);
 // app.use('/api', themeRoutes);
 app.use('/api', blogRoutes);
 app.use('/api', newsRoutes);
 app.use('/api', eventRoutes);
 app.use('/api/listings', listingRoutes);
-app.use('/api', agentRoutes);
+app.use('/api/agents', agentRoutes);
+app.use('/api/links', agentLinkRoutes);
+
+
+app.use('/api', translationRoutes);
+app.use('/api', emailRoutes);
+app.use('/api/api-management', apiManagementRoutes);
 
 app.use("/api/employee", employeeRoutes);
+app.use("/api/pdf", pdfRoutes);
 
 // app.use('/api', userRoutes);
 app.use('/uploads', express.static('uploads')); // serve images
@@ -101,11 +116,10 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
+
+// Move catch-all route to the very end to not block API routes
 app.use('*', (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: `Route ${req.originalUrl} not found`
-  });
+  res.status(404).json({ success: false, message: `Route ${req.originalUrl} not found` });
 });
 
 // Start server even if MongoDB is not available (for testing)

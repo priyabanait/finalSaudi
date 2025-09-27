@@ -2,14 +2,15 @@ import SEO from '../models/SEO.js';
 
 // Create SEO
 export const createSEO = async (req, res) => {
-  const { pageName, metaDescription, metaKeyword } = req.body;
-
+  const { pageName, metaTitle, metaDescription, metaKeyword, metaKeywords } = req.body;
+  const keywords = metaKeywords || metaKeyword || "";
   try {
     const seo = new SEO({
       pageName,
       pageSlug: pageName.toLowerCase().replace(/\s+/g, '-'),
+      metaTitle,
       metaDescription,
-      metaKeywords: metaKeyword
+      metaKeywords: keywords
     });
     const saved = await seo.save();
     res.status(201).json(saved);
@@ -52,13 +53,14 @@ export const getSEOBySlug = async (req, res) => {
 
 // Update SEO by ID
 export const updateSEO = async (req, res) => {
-  const { pageName, metaDescription, metaKeyword } = req.body;
-
+  const { pageName, metaTitle, metaDescription, metaKeyword, metaKeywords } = req.body;
+  const keywords = metaKeywords || metaKeyword || "";
   try {
     const updateFields = {};
     if (pageName) updateFields.pageName = pageName;
+    if (metaTitle) updateFields.metaTitle = metaTitle;
     if (metaDescription) updateFields.metaDescription = metaDescription;
-    if (metaKeyword) updateFields.metaKeywords = metaKeyword;
+    if (keywords) updateFields.metaKeywords = keywords;
     
     const seo = await SEO.findByIdAndUpdate(
       req.params.id,

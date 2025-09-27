@@ -31,10 +31,10 @@ app.get('/api/test', (req, res) => {
 // Register endpoint
 app.post('/api/auth/register', async (req, res) => {
   try {
-    const { firstName, lastName, email, phoneNumber, password } = req.body;
+    const { firstName,phoneNumber, password } = req.body;
 
     // Validation
-    if (!firstName || !lastName || !email || !phoneNumber || !password) {
+    if (!firstName || !phoneNumber || !password) {
       return res.status(400).json({
         success: false,
         message: 'All fields are required'

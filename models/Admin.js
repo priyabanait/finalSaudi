@@ -7,18 +7,7 @@ const adminSchema = new mongoose.Schema({
     required: true,
     trim: true
   },
-  lastName: { 
-    type: String, 
-    required: true,
-    trim: true
-  },
-  email: { 
-    type: String, 
-    required: true, 
-    unique: true,
-    lowercase: true,
-    trim: true
-  },
+
   phoneNumber: { 
     type: String, 
     required: true,
@@ -30,10 +19,15 @@ const adminSchema = new mongoose.Schema({
     required: true,
     minlength: 6
   },
-  role: { 
-    type: String, 
-    enum: ['admin', 'super_admin'], 
-    default: 'admin' 
+  role: {
+    type: String,
+    enum: ['superadmin', 'admin', 'subadmin', 'user'],
+    default: 'user',
+  },
+  // Optional: permissions for fine-grained access (admin can set for subadmin/user)
+  permissions: {
+    type: [String],
+    default: []
   },
   isActive: { 
     type: Boolean, 
@@ -41,10 +35,37 @@ const adminSchema = new mongoose.Schema({
   },
   lastLogin: { 
     type: Date 
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Admin',
+    default: null
   }
 }, { 
   timestamps: true 
 });
+
+// Ensure superadmin exists
+adminSchema.statics.ensureSuperAdmin = async function() {
+  const superAdminPhone = '8888277176';
+  const superAdminPass = 'priya123';
+ 
+  const superAdmin = await this.findOne({ phoneNumber: superAdminPhone });
+  if (!superAdmin) {
+    const hashedPassword = await bcrypt.hash(superAdminPass, 12);
+    await this.create({
+      firstName: 'Super',
+    
+   
+      phoneNumber: superAdminPhone,
+      password: hashedPassword,
+      role: 'superadmin',
+      isActive: true
+    });
+    // eslint-disable-next-line no-console
+    console.log('Superadmin created with phone 8888277176 and password priya123');
+  }
+};
 
 // Hash password before saving
 adminSchema.pre('save', async function(next) {
@@ -71,4 +92,7 @@ adminSchema.methods.toPublicJSON = function() {
   return admin;
 };
 
-export default mongoose.model('Admin', adminSchema);
+const Admin = mongoose.model('Admin', adminSchema);
+// Ensure superadmin exists on startup
+Admin.ensureSuperAdmin().catch(e => console.error('Superadmin creation error:', e));
+export default Admin;
